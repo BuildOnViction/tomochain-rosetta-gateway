@@ -1,0 +1,11 @@
+network_identifier:
+  blockchain: tomochain
+  network: 88
+currency:
+  symbol: TOMO
+  decimals: 18
+server:
+  port: 8080
+  endpoint: 127.0.0.1:8545
+  secureEndpoint: true
+  rosettaVersion: 0.0.1
