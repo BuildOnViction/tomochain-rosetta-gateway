@@ -37,8 +37,9 @@ func NewBlockchainRouter(client tc.TomoChainClient) (http.Handler, error) {
 	networkAPIController := server.NewNetworkAPIController(services.NewNetworkAPIService(client), asserter)
 	accountAPIController := server.NewAccountAPIController(services.NewAccountAPIService(client), asserter)
 	blockAPIController := server.NewBlockAPIController(services.NewBlockAPIService(client), asserter)
+	mempoolAPIController := server.NewMempoolAPIController(services.NewMempoolAPIService(client), asserter)
 	constructionAPIController := server.NewConstructionAPIController(services.NewConstructionAPIService(client), asserter)
-	r := server.NewRouter(networkAPIController, accountAPIController, blockAPIController, constructionAPIController)
+	r := server.NewRouter(networkAPIController, accountAPIController, blockAPIController, mempoolAPIController, constructionAPIController)
 	return server.CorsMiddleware(server.LoggerMiddleware(r)), nil
 }
 

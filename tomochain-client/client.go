@@ -7,9 +7,11 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
+	"github.com/tomochain/tomochain-rosetta-gateway/services"
 	"github.com/tomochain/tomochain/common"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
 	"github.com/tomochain/tomochain/ethclient"
+	"github.com/tomochain/tomochain/rpc"
 	"math/big"
 	"strconv"
 	"sync"
@@ -41,8 +43,14 @@ type (
 		// SubmitTx submits the given encoded transaction to the node.
 		SubmitTx(ctx context.Context, tx tomochaintypes.Transaction) (txid string, err error)
 
-		// GetTransactions returns transactions of the block.
-		GetTransactions(ctx context.Context, hash common.Hash) ([]*types.Transaction, error)
+		// GetBlockTransactions returns transactions of the block.
+		GetBlockTransactions(ctx context.Context, hash common.Hash) ([]*types.Transaction, error)
+
+		// GetMempool returns all transactions in mempool
+		GetMempool(ctx context.Context) ([]common.Hash, error)
+
+		// GetMempoolTransactions returns the specified transaction according to the hash in the mempool
+		GetMempoolTransaction(ctx context.Context, hash common.Hash) (*types.Transaction, error)
 
 		// GetConfig returns the config.
 		GetConfig() *config.Config
@@ -57,21 +65,25 @@ type (
 	// TomoChainRpcClient is an implementation of TomoChain client using local rpc/ipc connection.
 	TomoChainRpcClient struct {
 		sync.RWMutex
-		rpcConn *ethclient.Client
-		cfg     *config.Config
+		ethClient *ethclient.Client
+		cfg       *config.Config
 	}
 )
 
 // NewTomoChainClient returns an implementation of TomoChainClient
 func NewTomoChainClient(cfg *config.Config) (cli *TomoChainRpcClient, err error) {
-	rpcClient, err := ethclient.Dial(cfg.Server.Endpoint)
+	ethClient, err := ethclient.Dial(cfg.Server.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 	return &TomoChainRpcClient{
-		rpcConn: rpcClient,
-		cfg:     cfg,
+		ethClient: ethClient,
+		cfg:       cfg,
 	}, nil
+}
+
+func (c *TomoChainRpcClient) ConnectRpc() (*rpc.Client, error) {
+	return rpc.Dial(c.cfg.Server.Endpoint)
 }
 
 func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
@@ -83,7 +95,7 @@ func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
 }
 
 func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (ret *types.Block, err error) {
-	block, err := c.rpcConn.BlockByNumber(ctx, number)
+	block, err := c.ethClient.BlockByNumber(ctx, number)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +103,7 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 }
 
 func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash common.Hash) (ret *types.Block, err error) {
-	block, err := c.rpcConn.BlockByHash(ctx, hash)
+	block, err := c.ethClient.BlockByHash(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +115,7 @@ func (c *TomoChainRpcClient) GetLatestBlock(ctx context.Context) (*types.Block, 
 }
 
 func (c *TomoChainRpcClient) GetGenesisBlock(ctx context.Context) (*types.Block, error) {
-	block, err := c.rpcConn.BlockByNumber(ctx, common.Big0)
+	block, err := c.ethClient.BlockByNumber(ctx, common.Big0)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +123,7 @@ func (c *TomoChainRpcClient) GetGenesisBlock(ctx context.Context) (*types.Block,
 }
 
 func (c *TomoChainRpcClient) SuggestGasPrice(ctx context.Context) (uint64, error) {
-	suggestedGasPrice, err := c.rpcConn.SuggestGasPrice(ctx)
+	suggestedGasPrice, err := c.ethClient.SuggestGasPrice(ctx)
 	if err != nil {
 		return uint64(0), err
 	}
@@ -119,7 +131,7 @@ func (c *TomoChainRpcClient) SuggestGasPrice(ctx context.Context) (uint64, error
 }
 
 func (c *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.CallMsg) (uint64, error) {
-	gas, err := c.rpcConn.EstimateGas(ctx, msg)
+	gas, err := c.ethClient.EstimateGas(ctx, msg)
 	if err != nil {
 		return uint64(0), err
 	}
@@ -135,7 +147,7 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Ha
 	ret.BlockIdentifier = block.BlockIdentifier
 
 	// attach nonce
-	nonce, err := c.rpcConn.NonceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	nonce, err := c.ethClient.NonceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +161,8 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Ha
 	return ret, nil
 }
 
-func (c *TomoChainRpcClient) GetTransactions(ctx context.Context, hash common.Hash) (ret []*types.Transaction, err error) {
-	block, err := c.rpcConn.BlockByHash(ctx, hash)
+func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash common.Hash) (ret []*types.Transaction, err error) {
+	block, err := c.ethClient.BlockByHash(ctx, hash)
 	if err != nil {
 		return []*types.Transaction{}, err
 	}
@@ -185,4 +197,47 @@ func (c *TomoChainRpcClient) PackBlockData(block *tomochaintypes.Block) (ret *ty
 func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transactions) (ret []*types.Transaction) {
 	//TODO
 	return ret
+}
+
+// GetMempool returns all transactions in mempool
+func (c *TomoChainRpcClient) GetMempool(ctx context.Context) ([]common.Hash, error) {
+	rpcClient, err := c.ConnectRpc()
+	if err != nil {
+		return nil, err
+	}
+	defer rpcClient.Close()
+
+	pendingTxs := []*services.RPCTransaction{}
+	err = rpcClient.CallContext(ctx, &pendingTxs, "eth_pendingTransactions")
+	if err != nil {
+		return nil, err
+	}
+	pendingTxHash := []common.Hash{}
+	for _, tx := range pendingTxs {
+		pendingTxHash = append(pendingTxHash, tx.Hash)
+	}
+	return pendingTxHash, nil
+}
+
+// GetMempoolTransactions returns the specified transaction according to the hash in the mempool
+func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash common.Hash) (*types.Transaction, error) {
+	rpcClient, err := c.ConnectRpc()
+	if err != nil {
+		return nil, err
+	}
+	defer rpcClient.Close()
+
+	pendingTxs := []*services.RPCTransaction{}
+	err = rpcClient.CallContext(ctx, &pendingTxs, "eth_pendingTransactions")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tx := range pendingTxs {
+		if tx.Hash.String() == hash.String() {
+			//FIXME: format to types.Transaction
+			return tx, nil
+		}
+	}
+	return nil, nil
 }
