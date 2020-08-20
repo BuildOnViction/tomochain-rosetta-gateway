@@ -127,7 +127,25 @@ func (c *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.Call
 }
 
 func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Hash, owner string) (ret *types.AccountBalanceResponse, err error) {
+	block, err := c.GetBlockByHash(ctx, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	ret = &types.AccountBalanceResponse{}
+	ret.BlockIdentifier = block.BlockIdentifier
+
+	// attach nonce
+	nonce, err := c.rpcConn.NonceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	if err != nil {
+		return nil, err
+	}
 	//TODO: get account metadata
+	// native balance, token balance
+	// token metadata
+
+	ret.Metadata = map[string]interface{}{
+		"sequence_number": nonce,
+	}
 	return ret, nil
 }
 

@@ -4,11 +4,10 @@ package services
 
 import (
 	"context"
-	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
-	"math/big"
-
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
+	"github.com/tomochain/tomochain/common"
 )
 
 type accountAPIService struct {
@@ -31,8 +30,7 @@ func (s *accountAPIService) AccountBalance(
 	if terr != nil {
 		return nil, terr
 	}
-	blockHash, err := s.client.GetBlock(ctx, big.NewInt(*(request.BlockIdentifier.Index)))
-	resp, err := s.client.GetAccount(ctx, blockHash, request.AccountIdentifier.Address)
+	resp, err := s.client.GetAccount(ctx, common.HexToHash(*(request.BlockIdentifier.Hash)), request.AccountIdentifier.Address)
 	if err != nil {
 		return nil, ErrUnableToGetAccount
 	}
