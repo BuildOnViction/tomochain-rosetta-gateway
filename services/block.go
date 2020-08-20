@@ -4,11 +4,11 @@ package services
 
 import (
 	"context"
-	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
-	"math/big"
-
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
+	"github.com/tomochain/tomochain/common"
+	"math/big"
 )
 
 type blockAPIService struct {
@@ -30,23 +30,25 @@ func (s *blockAPIService) Block(
 	if terr != nil {
 		return nil, terr
 	}
-	var blockNumber int64
 
+	var (
+		block *types.Block
+		err error
+	)
 	if request.BlockIdentifier != nil {
-		if request.BlockIdentifier.Index != nil {
-			blockNumber = *request.BlockIdentifier.Index
-		} else if request.BlockIdentifier.Hash != nil {
-			return nil, ErrMustQueryByIndex
+		if request.BlockIdentifier.Hash != nil {
+			block, err = s.client.GetBlockByHash(ctx, common.HexToHash(*(request.BlockIdentifier.Hash)))
+		} else if request.BlockIdentifier.Index != nil {
+			block, err = s.client.GetBlockByNumber(ctx, big.NewInt(*(request.BlockIdentifier.Index)))
 		}
 	}
-
-	tblk, err := s.client.GetBlock(ctx, big.NewInt(blockNumber))
-	if err != nil {
+	if err != nil || block == nil {
 		return nil, ErrUnableToGetBlk
 	}
 
+
 	resp := &types.BlockResponse{
-		Block: tblk,
+		Block: block,
 	}
 
 	return resp, nil
