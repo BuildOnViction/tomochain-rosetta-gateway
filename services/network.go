@@ -8,6 +8,7 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	"github.com/tomochain/tomochain/params"
+	"strconv"
 )
 
 const (
@@ -33,8 +34,8 @@ func (s *networkAPIService) NetworkList(
 	return &types.NetworkListResponse{
 		NetworkIdentifiers: []*types.NetworkIdentifier{
 			{
-				Blockchain: s.client.GetConfig().NetworkIdentifier.Blockchain,
-				Network:    s.client.GetConfig().NetworkIdentifier.Network,
+				Blockchain: TomoChainBlockchain,
+				Network:    strconv.FormatUint(TomoChainMainnetNetWorkId, 10),
 			},
 		},
 	}, nil
@@ -58,11 +59,11 @@ func (s *networkAPIService) NetworkStatus(
 	if err != nil {
 		return nil, ErrUnableToGetNodeStatus
 	}
+
 	resp := &types.NetworkStatusResponse{
 		CurrentBlockIdentifier: blk.BlockIdentifier,
 		CurrentBlockTimestamp:  blk.Timestamp, // ms
 		GenesisBlockIdentifier: genesisblk.BlockIdentifier,
-		Peers:                  nil,
 	}
 
 	return resp, nil

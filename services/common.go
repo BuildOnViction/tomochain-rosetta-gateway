@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	TomoChainBlockchain = "tomochain"
-	TomoChainNetWorkId  = 88
-	StatusSuccess       = "success"
-	StatusFail          = "fail"
+	TomoChainBlockchain       = "tomochain"
+	TomoChainMainnetNetWorkId = 88
+	StatusSuccess             = "SUCCESS"
+	StatusFail                = "FAIL"
 )
 
 // ValidateNetworkIdentifier validates the network identifier.
@@ -25,7 +25,7 @@ func ValidateNetworkIdentifier(ctx context.Context, client tc.TomoChainClient, n
 			return ErrInvalidSubnetwork
 		}
 
-		if chainId, err := client.GetChainID(ctx); err != nil || chainId.Uint64() != TomoChainNetWorkId {
+		if chainId, err := client.GetChainID(ctx); err != nil || chainId.Uint64() != TomoChainMainnetNetWorkId {
 			return ErrInvalidNetwork
 		}
 	} else {
