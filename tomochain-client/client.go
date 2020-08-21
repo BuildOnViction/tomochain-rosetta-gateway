@@ -94,7 +94,7 @@ func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
 	return big.NewInt(int64(id)), nil
 }
 
-func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (ret *types.Block, err error) {
+func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (res *types.Block, err error) {
 	block, err := c.ethClient.BlockByNumber(ctx, number)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	return c.PackBlockData(block), nil
 }
 
-func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash common.Hash) (ret *types.Block, err error) {
+func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash common.Hash) (res *types.Block, err error) {
 	block, err := c.ethClient.BlockByHash(ctx, hash)
 	if err != nil {
 		return nil, err
@@ -138,30 +138,39 @@ func (c *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.Call
 	return gas, err
 }
 
-func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Hash, owner string) (ret *types.AccountBalanceResponse, err error) {
+func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Hash, owner string) (res *types.AccountBalanceResponse, err error) {
 	block, err := c.GetBlockByHash(ctx, blockHash)
 	if err != nil {
 		return nil, err
 	}
-	ret = &types.AccountBalanceResponse{}
-	ret.BlockIdentifier = block.BlockIdentifier
+	res = &types.AccountBalanceResponse{}
+	res.BlockIdentifier = block.BlockIdentifier
+
+	balance, err := c.ethClient.BalanceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	if err != nil {
+		return nil, err
+	}
+	// TODO: support native coin TOMO only, tokens are not available yet
+	res.Balances = []*types.Amount{
+		{
+			Value: balance.String(),
+			Currency: services.TomoNativeCoin,
+		},
+	}
+	res.Coins = nil
 
 	// attach nonce
 	nonce, err := c.ethClient.NonceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
 	if err != nil {
 		return nil, err
 	}
-	//TODO: get account metadata
-	// native balance, token balance
-	// token metadata
-
-	ret.Metadata = map[string]interface{}{
+	res.Metadata = map[string]interface{}{
 		"sequence_number": nonce,
 	}
-	return ret, nil
+	return res, nil
 }
 
-func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash common.Hash) (ret []*types.Transaction, err error) {
+func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash common.Hash) (res []*types.Transaction, err error) {
 	block, err := c.ethClient.BlockByHash(ctx, hash)
 	if err != nil {
 		return []*types.Transaction{}, err
@@ -178,7 +187,7 @@ func (c *TomoChainRpcClient) GetConfig() *config.Config {
 	return c.cfg
 }
 
-func (c *TomoChainRpcClient) PackBlockData(block *tomochaintypes.Block) (ret *types.Block) {
+func (c *TomoChainRpcClient) PackBlockData(block *tomochaintypes.Block) (res *types.Block) {
 	return &types.Block{
 		BlockIdentifier: &types.BlockIdentifier{
 			Index: block.Number().Int64(),
@@ -211,8 +220,7 @@ func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transac
 						Address: tx.From().String(),
 					},
 					Amount:              &types.Amount{
-						//FIXME: right for native transfer only, wrong for internal transaction with other tokens or contract transfer
-
+						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Value:    tx.Value().Text(10),
 						Currency: services.TomoNativeCoin,
 					},
@@ -224,12 +232,12 @@ func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transac
 					Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
 					Status:              services.StatusSuccess,
 					Account:             &types.AccountIdentifier{
-						//FIXME: right for native transfer only, wrong for internal transaction with other tokens
+						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Address: (*(tx.To())).String(),
 					},
 					Amount:              &types.Amount{
-						//FIXME: right for native transfer only, wrong for internal transaction with other tokens
-						Value:    tx.Value().Text(10),
+						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+						Value:    tx.Value().String(),
 						Currency: services.TomoNativeCoin,
 					},
 				},
@@ -275,7 +283,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash com
 
 	for _, tx := range pendingTxs {
 		if tx.Hash.String() == hash.String() {
-			//FIXME: format to types.Transaction
+			//TODO: not support internal transaction yet
 			return &types.Transaction{
 				TransactionIdentifier: &types.TransactionIdentifier{
 					Hash: tx.Hash.String(),
@@ -291,9 +299,8 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash com
 							Address: tx.From.String(),
 						},
 						Amount:              &types.Amount{
-							//FIXME: right for native transfer only, wrong for internal transaction with other tokens or contract transfer
-
-							Value:    tx.Value.ToInt().Text(10),
+							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+							Value:    tx.Value.ToInt().String(),
 							Currency: services.TomoNativeCoin,
 						},
 					},
@@ -304,12 +311,12 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash com
 						Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
 						Status:              services.StatusSuccess,
 						Account:             &types.AccountIdentifier{
-							//FIXME: right for native transfer only, wrong for internal transaction with other tokens
+							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 							Address: (*(tx.To)).String(),
 						},
 						Amount:              &types.Amount{
-							//FIXME: right for native transfer only, wrong for internal transaction with other tokens
-							Value:    tx.Value.ToInt().Text(10),
+							//TODO: right for native transfer only, wrong for internal transaction with other tokens or contract transfer
+							Value:    tx.Value.ToInt().String(),
 							Currency: services.TomoNativeCoin,
 						},
 					},
