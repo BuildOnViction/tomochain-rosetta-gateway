@@ -16,6 +16,7 @@ const (
 	StatusSuccess             = "SUCCESS"
 	StatusFail                = "FAIL"
 )
+
 type RPCTransaction struct {
 	BlockHash        common.Hash     `json:"blockHash"`
 	BlockNumber      *hexutil.Big    `json:"blockNumber"`
@@ -32,6 +33,13 @@ type RPCTransaction struct {
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
 }
+
+var (
+	TomoNativeCoin = &types.Currency{
+	Symbol:   "TOMO",
+	Decimals: 18,
+}
+)
 
 // ValidateNetworkIdentifier validates the network identifier.
 func ValidateNetworkIdentifier(ctx context.Context, client tc.TomoChainClient, ni *types.NetworkIdentifier) *types.Error {

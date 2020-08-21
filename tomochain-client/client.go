@@ -190,13 +190,53 @@ func (c *TomoChainRpcClient) PackBlockData(block *tomochaintypes.Block) (ret *ty
 		},
 		Timestamp:    new(big.Int).Mul(block.Time(), big.NewInt(1000)).Int64(),
 		Transactions: c.PackTransaction(block.Transactions()),
-		Metadata:     map[string]interface{}{},
 	}
 }
 
-func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transactions) (ret []*types.Transaction) {
-	//TODO
-	return ret
+func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transactions) ([]*types.Transaction) {
+	result := []*types.Transaction{}
+	for _, tx := range transactions {
+		result = append(result, &types.Transaction{
+			TransactionIdentifier: &types.TransactionIdentifier{
+				Hash: tx.Hash().String(),
+			},
+			Operations:  []*types.Operation{
+				// sender
+				{
+					OperationIdentifier: nil,
+					RelatedOperations:   nil,
+					Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
+					Status:              services.StatusSuccess,
+					Account:             &types.AccountIdentifier{
+						Address: tx.From().String(),
+					},
+					Amount:              &types.Amount{
+						//FIXME: right for native transfer only, wrong for internal transaction with other tokens or contract transfer
+
+						Value:    tx.Value().Text(10),
+						Currency: services.TomoNativeCoin,
+					},
+				},
+				// recipient
+				{
+					OperationIdentifier: nil,
+					RelatedOperations:   nil,
+					Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
+					Status:              services.StatusSuccess,
+					Account:             &types.AccountIdentifier{
+						//FIXME: right for native transfer only, wrong for internal transaction with other tokens
+						Address: (*(tx.To())).String(),
+					},
+					Amount:              &types.Amount{
+						//FIXME: right for native transfer only, wrong for internal transaction with other tokens
+						Value:    tx.Value().Text(10),
+						Currency: services.TomoNativeCoin,
+					},
+				},
+			},
+		})
+	}
+	return result
 }
 
 // GetMempool returns all transactions in mempool
@@ -236,7 +276,45 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash com
 	for _, tx := range pendingTxs {
 		if tx.Hash.String() == hash.String() {
 			//FIXME: format to types.Transaction
-			return tx, nil
+			return &types.Transaction{
+				TransactionIdentifier: &types.TransactionIdentifier{
+					Hash: tx.Hash.String(),
+				},
+				Operations:  []*types.Operation{
+					// sender
+					{
+						OperationIdentifier: nil,
+						RelatedOperations:   nil,
+						Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
+						Status:              services.StatusSuccess,
+						Account:             &types.AccountIdentifier{
+							Address: tx.From.String(),
+						},
+						Amount:              &types.Amount{
+							//FIXME: right for native transfer only, wrong for internal transaction with other tokens or contract transfer
+
+							Value:    tx.Value.ToInt().Text(10),
+							Currency: services.TomoNativeCoin,
+						},
+					},
+					// recipient
+					{
+						OperationIdentifier: nil,
+						RelatedOperations:   nil,
+						Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
+						Status:              services.StatusSuccess,
+						Account:             &types.AccountIdentifier{
+							//FIXME: right for native transfer only, wrong for internal transaction with other tokens
+							Address: (*(tx.To)).String(),
+						},
+						Amount:              &types.Amount{
+							//FIXME: right for native transfer only, wrong for internal transaction with other tokens
+							Value:    tx.Value.ToInt().Text(10),
+							Currency: services.TomoNativeCoin,
+						},
+					},
+				},
+			}, nil
 		}
 	}
 	return nil, nil
