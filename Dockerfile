@@ -26,7 +26,8 @@ cd /usr/local && rm -rf tomochain-rosetta-gateway-source
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 
-VOLUME /tomochain
+# https://www.rosetta-api.org/docs/standard_storage_location.html
+VOLUME /data
 WORKDIR /app
 
 ARG P2P_PORT=30303
