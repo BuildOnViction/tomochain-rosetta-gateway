@@ -6,8 +6,9 @@ import (
 	"context"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
-	"github.com/tomochain/tomochain/common"
+	tomochaincommon "github.com/tomochain/tomochain/common"
 	"math/big"
 )
 
@@ -26,7 +27,7 @@ func (s *blockAPIService) Block(
 	ctx context.Context,
 	request *types.BlockRequest,
 ) (*types.BlockResponse, *types.Error) {
-	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
+	terr := common.ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
@@ -37,13 +38,13 @@ func (s *blockAPIService) Block(
 	)
 	if request.BlockIdentifier != nil {
 		if request.BlockIdentifier.Hash != nil {
-			block, err = s.client.GetBlockByHash(ctx, common.HexToHash(*(request.BlockIdentifier.Hash)))
+			block, err = s.client.GetBlockByHash(ctx, tomochaincommon.HexToHash(*(request.BlockIdentifier.Hash)))
 		} else if request.BlockIdentifier.Index != nil {
 			block, err = s.client.GetBlockByNumber(ctx, big.NewInt(*(request.BlockIdentifier.Index)))
 		}
 	}
 	if err != nil || block == nil {
-		return nil, ErrUnableToGetBlk
+		return nil, common.ErrUnableToGetBlk
 	}
 
 
@@ -61,5 +62,5 @@ func (s *blockAPIService) BlockTransaction(
 	ctx context.Context,
 	request *types.BlockTransactionRequest,
 ) (*types.BlockTransactionResponse, *types.Error) {
-	return nil, ErrNotImplemented
+	return nil, common.ErrNotImplemented
 }

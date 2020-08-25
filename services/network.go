@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	"github.com/tomochain/tomochain/params"
 	"strconv"
@@ -34,8 +35,8 @@ func (s *networkAPIService) NetworkList(
 	return &types.NetworkListResponse{
 		NetworkIdentifiers: []*types.NetworkIdentifier{
 			{
-				Blockchain: TomoChainBlockchain,
-				Network:    strconv.FormatUint(TomoChainMainnetNetWorkId, 10),
+				Blockchain: common.TomoChainBlockchain,
+				Network:    strconv.FormatUint(common.TomoChainMainnetNetWorkId, 10),
 			},
 		},
 	}, nil
@@ -46,18 +47,18 @@ func (s *networkAPIService) NetworkStatus(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkStatusResponse, *types.Error) {
-	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
+	terr := common.ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
 
 	blk, err := s.client.GetBlockByNumber(ctx, nil) // nil means: get latest block
 	if err != nil {
-		return nil, ErrUnableToGetNodeStatus
+		return nil, common.ErrUnableToGetNodeStatus
 	}
 	genesisblk, err := s.client.GetGenesisBlock(ctx)
 	if err != nil {
-		return nil, ErrUnableToGetNodeStatus
+		return nil, common.ErrUnableToGetNodeStatus
 	}
 
 	resp := &types.NetworkStatusResponse{
@@ -74,7 +75,7 @@ func (s *networkAPIService) NetworkOptions(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkOptionsResponse, *types.Error) {
-	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
+	terr := common.ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
@@ -87,16 +88,16 @@ func (s *networkAPIService) NetworkOptions(
 		Allow: &types.Allow{
 			OperationStatuses: []*types.OperationStatus{
 				{
-					Status:     StatusSuccess,
+					Status:     common.StatusSuccess,
 					Successful: true,
 				},
 				{
-					Status:     StatusFail,
+					Status:     common.StatusFail,
 					Successful: false,
 				},
 			},
-			OperationTypes: SupportedOperationTypes(),
-			Errors:         ErrorList,
+			OperationTypes: common.SupportedOperationTypes(),
+			Errors:         common.ErrorList,
 		},
 	}, nil
 }

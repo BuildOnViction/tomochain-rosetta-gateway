@@ -3,6 +3,7 @@
 package main
 
 import (
+	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	"github.com/tomochain/tomochain-rosetta-gateway/services"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
@@ -22,7 +23,7 @@ const (
 // NewBlockchainRouter returns a Mux http.Handler from a collection of
 // Rosetta service controllers.
 func NewBlockchainRouter(client tc.TomoChainClient) (http.Handler, error) {
-	asserter, err := asserter.NewServer(services.SupportedOperationTypes(),
+	asserter, err := asserter.NewServer(common.SupportedOperationTypes(),
 		false,
 		[]*types.NetworkIdentifier{
 			{

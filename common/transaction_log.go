@@ -1,6 +1,6 @@
 // Copyright (c) 2020 TomoChain
 
-package services
+package common
 
 import (
 	proto "github.com/golang/protobuf/proto"

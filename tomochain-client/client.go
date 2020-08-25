@@ -6,9 +6,9 @@ import (
 	"context"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain"
+	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
-	"github.com/tomochain/tomochain-rosetta-gateway/services"
-	"github.com/tomochain/tomochain/common"
+	tomochaincommon "github.com/tomochain/tomochain/common"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
 	"github.com/tomochain/tomochain/ethclient"
 	"github.com/tomochain/tomochain/rpc"
@@ -28,7 +28,7 @@ type (
 		GetBlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 
 		// GetBlockByHash returns the TomoChain block at given hash.
-		GetBlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error)
+		GetBlockByHash(ctx context.Context, hash tomochaincommon.Hash) (*types.Block, error)
 
 		// GetLatestBlock returns latest TomoChain block.
 		GetLatestBlock(ctx context.Context) (*types.Block, error)
@@ -38,19 +38,19 @@ type (
 
 		// GetAccount returns the TomoChain staking account for given owner address
 		// at given height.
-		GetAccount(ctx context.Context, blockHash common.Hash, owner string) (*types.AccountBalanceResponse, error)
+		GetAccount(ctx context.Context, blockHash tomochaincommon.Hash, owner string) (*types.AccountBalanceResponse, error)
 
 		// SubmitTx submits the given encoded transaction to the node.
 		SubmitTx(ctx context.Context, tx tomochaintypes.Transaction) (txid string, err error)
 
 		// GetBlockTransactions returns transactions of the block.
-		GetBlockTransactions(ctx context.Context, hash common.Hash) ([]*types.Transaction, error)
+		GetBlockTransactions(ctx context.Context, hash tomochaincommon.Hash) ([]*types.Transaction, error)
 
 		// GetMempool returns all transactions in mempool
-		GetMempool(ctx context.Context) ([]common.Hash, error)
+		GetMempool(ctx context.Context) ([]tomochaincommon.Hash, error)
 
 		// GetMempoolTransactions returns the specified transaction according to the hash in the mempool
-		GetMempoolTransaction(ctx context.Context, hash common.Hash) (*types.Transaction, error)
+		GetMempoolTransaction(ctx context.Context, hash tomochaincommon.Hash) (*types.Transaction, error)
 
 		// GetConfig returns the config.
 		GetConfig() *config.Config
@@ -89,7 +89,7 @@ func (c *TomoChainRpcClient) ConnectRpc() (*rpc.Client, error) {
 func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
 	id, err := strconv.Atoi(c.cfg.NetworkIdentifier.Network)
 	if err != nil {
-		return common.Big0, err
+		return tomochaincommon.Big0, err
 	}
 	return big.NewInt(int64(id)), nil
 }
@@ -102,7 +102,7 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	return c.PackBlockData(block), nil
 }
 
-func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash common.Hash) (res *types.Block, err error) {
+func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochaincommon.Hash) (res *types.Block, err error) {
 	block, err := c.ethClient.BlockByHash(ctx, hash)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (c *TomoChainRpcClient) GetLatestBlock(ctx context.Context) (*types.Block, 
 }
 
 func (c *TomoChainRpcClient) GetGenesisBlock(ctx context.Context) (*types.Block, error) {
-	block, err := c.ethClient.BlockByNumber(ctx, common.Big0)
+	block, err := c.ethClient.BlockByNumber(ctx, tomochaincommon.Big0)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,10 @@ func (c *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.Call
 	return gas, err
 }
 
-func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Hash, owner string) (res *types.AccountBalanceResponse, err error) {
+//TODO: internal transfer via smart contract must be done
+// https://www.rosetta-api.org/docs/all_balance_changing.html
+
+func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash tomochaincommon.Hash, owner string) (res *types.AccountBalanceResponse, err error) {
 	block, err := c.GetBlockByHash(ctx, blockHash)
 	if err != nil {
 		return nil, err
@@ -146,21 +149,21 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Ha
 	res = &types.AccountBalanceResponse{}
 	res.BlockIdentifier = block.BlockIdentifier
 
-	balance, err := c.ethClient.BalanceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	balance, err := c.ethClient.BalanceAt(ctx, tomochaincommon.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
 	if err != nil {
 		return nil, err
 	}
 	// TODO: support native coin TOMO only, tokens are not available yet
 	res.Balances = []*types.Amount{
 		{
-			Value: balance.String(),
-			Currency: services.TomoNativeCoin,
+			Value:    balance.String(),
+			Currency: common.TomoNativeCoin,
 		},
 	}
 	res.Coins = nil
 
 	// attach nonce
-	nonce, err := c.ethClient.NonceAt(ctx, common.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	nonce, err := c.ethClient.NonceAt(ctx, tomochaincommon.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +173,7 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash common.Ha
 	return res, nil
 }
 
-func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash common.Hash) (res []*types.Transaction, err error) {
+func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash tomochaincommon.Hash) (res []*types.Transaction, err error) {
 	block, err := c.ethClient.BlockByHash(ctx, hash)
 	if err != nil {
 		return []*types.Transaction{}, err
@@ -202,43 +205,43 @@ func (c *TomoChainRpcClient) PackBlockData(block *tomochaintypes.Block) (res *ty
 	}
 }
 
-func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transactions) ([]*types.Transaction) {
+func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transactions) []*types.Transaction {
 	result := []*types.Transaction{}
 	for _, tx := range transactions {
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
 				Hash: tx.Hash().String(),
 			},
-			Operations:  []*types.Operation{
+			Operations: []*types.Operation{
 				// sender
 				{
 					OperationIdentifier: nil,
 					RelatedOperations:   nil,
-					Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
-					Status:              services.StatusSuccess,
-					Account:             &types.AccountIdentifier{
+					Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+					Status:              common.StatusSuccess,
+					Account: &types.AccountIdentifier{
 						Address: tx.From().String(),
 					},
-					Amount:              &types.Amount{
+					Amount: &types.Amount{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Value:    tx.Value().Text(10),
-						Currency: services.TomoNativeCoin,
+						Currency: common.TomoNativeCoin,
 					},
 				},
 				// recipient
 				{
 					OperationIdentifier: nil,
 					RelatedOperations:   nil,
-					Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
-					Status:              services.StatusSuccess,
-					Account:             &types.AccountIdentifier{
+					Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+					Status:              common.StatusSuccess,
+					Account: &types.AccountIdentifier{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Address: (*(tx.To())).String(),
 					},
-					Amount:              &types.Amount{
+					Amount: &types.Amount{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Value:    tx.Value().String(),
-						Currency: services.TomoNativeCoin,
+						Currency: common.TomoNativeCoin,
 					},
 				},
 			},
@@ -248,19 +251,19 @@ func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transac
 }
 
 // GetMempool returns all transactions in mempool
-func (c *TomoChainRpcClient) GetMempool(ctx context.Context) ([]common.Hash, error) {
+func (c *TomoChainRpcClient) GetMempool(ctx context.Context) ([]tomochaincommon.Hash, error) {
 	rpcClient, err := c.ConnectRpc()
 	if err != nil {
 		return nil, err
 	}
 	defer rpcClient.Close()
 
-	pendingTxs := []*services.RPCTransaction{}
+	pendingTxs := []*common.RPCTransaction{}
 	err = rpcClient.CallContext(ctx, &pendingTxs, "eth_pendingTransactions")
 	if err != nil {
 		return nil, err
 	}
-	pendingTxHash := []common.Hash{}
+	pendingTxHash := []tomochaincommon.Hash{}
 	for _, tx := range pendingTxs {
 		pendingTxHash = append(pendingTxHash, tx.Hash)
 	}
@@ -268,14 +271,14 @@ func (c *TomoChainRpcClient) GetMempool(ctx context.Context) ([]common.Hash, err
 }
 
 // GetMempoolTransactions returns the specified transaction according to the hash in the mempool
-func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash common.Hash) (*types.Transaction, error) {
+func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tomochaincommon.Hash) (*types.Transaction, error) {
 	rpcClient, err := c.ConnectRpc()
 	if err != nil {
 		return nil, err
 	}
 	defer rpcClient.Close()
 
-	pendingTxs := []*services.RPCTransaction{}
+	pendingTxs := []*common.RPCTransaction{}
 	err = rpcClient.CallContext(ctx, &pendingTxs, "eth_pendingTransactions")
 	if err != nil {
 		return nil, err
@@ -288,36 +291,36 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash com
 				TransactionIdentifier: &types.TransactionIdentifier{
 					Hash: tx.Hash.String(),
 				},
-				Operations:  []*types.Operation{
+				Operations: []*types.Operation{
 					// sender
 					{
 						OperationIdentifier: nil,
 						RelatedOperations:   nil,
-						Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
-						Status:              services.StatusSuccess,
-						Account:             &types.AccountIdentifier{
+						Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+						Status:              common.StatusSuccess,
+						Account: &types.AccountIdentifier{
 							Address: tx.From.String(),
 						},
-						Amount:              &types.Amount{
+						Amount: &types.Amount{
 							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 							Value:    tx.Value.ToInt().String(),
-							Currency: services.TomoNativeCoin,
+							Currency: common.TomoNativeCoin,
 						},
 					},
 					// recipient
 					{
 						OperationIdentifier: nil,
 						RelatedOperations:   nil,
-						Type:                services.TransactionLogType_name[int32(services.TransactionLogType_NATIVE_TRANSFER)],
-						Status:              services.StatusSuccess,
-						Account:             &types.AccountIdentifier{
+						Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+						Status:              common.StatusSuccess,
+						Account: &types.AccountIdentifier{
 							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 							Address: (*(tx.To)).String(),
 						},
-						Amount:              &types.Amount{
+						Amount: &types.Amount{
 							//TODO: right for native transfer only, wrong for internal transaction with other tokens or contract transfer
 							Value:    tx.Value.ToInt().String(),
-							Currency: services.TomoNativeCoin,
+							Currency: common.TomoNativeCoin,
 						},
 					},
 				},
