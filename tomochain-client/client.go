@@ -168,7 +168,7 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash tomochain
 		return nil, err
 	}
 	res.Metadata = map[string]interface{}{
-		"sequence_number": nonce,
+		common.METADATA_SEQUENCE_NUMBER: nonce,
 	}
 	return res, nil
 }
@@ -198,7 +198,7 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 			Hash:  block.ParentHash().String(),
 		}
 	}
-	transactions, err := c.PackTransaction(ctx,  block.Number(), block.Transactions())
+	transactions, err := c.PackTransaction(ctx, block.Number(), block.Transactions())
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +208,8 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 			Hash:  block.Hash().String(),
 		},
 		ParentBlockIdentifier: parent,
-		Timestamp:    new(big.Int).Mul(block.Time(), big.NewInt(1000)).Int64(),
-		Transactions: transactions,
+		Timestamp:             new(big.Int).Mul(block.Time(), big.NewInt(1000)).Int64(),
+		Transactions:          transactions,
 	}, nil
 }
 
@@ -219,9 +219,9 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 	for _, tx := range transactions {
 		var (
 			fromBalance, toBalance *big.Int
-			ok bool
-			err error
-			)
+			ok                     bool
+			err                    error
+		)
 		from := *tx.From()
 		to := *tx.To()
 
@@ -232,7 +232,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 			}
 		}
 		if toBalance, ok = balances[to]; !ok {
-			toBalance, err = c.ethClient.BalanceAt(ctx, to,  new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
+			toBalance, err = c.ethClient.BalanceAt(ctx, to, new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
 			if err != nil {
 				return []*types.Transaction{}, err
 			}
@@ -240,7 +240,6 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 		// update new balance
 		balances[from] = new(big.Int).Sub(fromBalance, tx.Value())
 		balances[to] = new(big.Int).Add(toBalance, tx.Value())
-
 
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
@@ -250,11 +249,11 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 				// sender
 				{
 					OperationIdentifier: &types.OperationIdentifier{
-						Index:        0,
+						Index: 0,
 					},
-					RelatedOperations:   nil,
-					Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
-					Status:              common.StatusSuccess,
+					RelatedOperations: nil,
+					Type:              common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+					Status:            common.SUCSESS,
 					Account: &types.AccountIdentifier{
 						Address: (*tx.From()).String(),
 					},
@@ -264,21 +263,21 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 						Currency: common.TomoNativeCoin,
 					},
 					Metadata: map[string]interface{}{
-						"new_balance": balances[from].String(),
+						common.METADATA_NEW_BALANCE: balances[from].String(),
 					},
 				},
 				// recipient
 				{
 					OperationIdentifier: &types.OperationIdentifier{
-						Index:        1,
+						Index: 1,
 					},
-					RelatedOperations:   []*types.OperationIdentifier{
+					RelatedOperations: []*types.OperationIdentifier{
 						{
 							Index: 0,
 						},
 					},
-					Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
-					Status:              common.StatusSuccess,
+					Type:   common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+					Status: common.SUCSESS,
 					Account: &types.AccountIdentifier{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Address: (*(tx.To())).String(),
@@ -289,7 +288,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 						Currency: common.TomoNativeCoin,
 					},
 					Metadata: map[string]interface{}{
-						"new_balance": balances[to].String(),
+						common.METADATA_NEW_BALANCE: balances[to].String(),
 					},
 				},
 			},
@@ -353,9 +352,9 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 						OperationIdentifier: &types.OperationIdentifier{
 							Index: 0,
 						},
-						RelatedOperations:   nil,
-						Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
-						Status:              common.StatusSuccess,
+						RelatedOperations: nil,
+						Type:              common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+						Status:            common.SUCSESS,
 						Account: &types.AccountIdentifier{
 							Address: tx.From.String(),
 						},
@@ -365,7 +364,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 							Currency: common.TomoNativeCoin,
 						},
 						Metadata: map[string]interface{}{
-							"new_balance": new(big.Int).Sub(fromBalance, tx.Value.ToInt()).String(),
+							common.METADATA_NEW_BALANCE: new(big.Int).Sub(fromBalance, tx.Value.ToInt()).String(),
 						},
 					},
 					// recipient
@@ -373,13 +372,13 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 						OperationIdentifier: &types.OperationIdentifier{
 							Index: 1,
 						},
-						RelatedOperations:   []*types.OperationIdentifier{
+						RelatedOperations: []*types.OperationIdentifier{
 							{
 								Index: 0,
 							},
 						},
-						Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
-						Status:              common.StatusSuccess,
+						Type:   common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+						Status: common.SUCSESS,
 						Account: &types.AccountIdentifier{
 							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 							Address: (*(tx.To)).String(),
@@ -390,7 +389,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 							Currency: common.TomoNativeCoin,
 						},
 						Metadata: map[string]interface{}{
-							"new_balance": new(big.Int).Add(toBalance, tx.Value.ToInt()).String(),
+							common.METADATA_NEW_BALANCE: new(big.Int).Add(toBalance, tx.Value.ToInt()).String(),
 						},
 					},
 				},

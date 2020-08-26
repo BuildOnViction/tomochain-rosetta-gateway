@@ -11,10 +11,15 @@ import (
 )
 
 const (
+	// tomochain network information
 	TomoChainBlockchain       = "tomochain"
 	TomoChainMainnetNetWorkId = 88
-	StatusSuccess             = "SUCCESS"
-	StatusFail                = "FAIL"
+
+	// text
+	SUCSESS                  = "SUCCESS"
+	FAIL                     = "FAIL"
+	METADATA_NEW_BALANCE     = "new_balance"
+	METADATA_SEQUENCE_NUMBER = "sequence_number"
 )
 
 type RPCTransaction struct {
@@ -36,9 +41,9 @@ type RPCTransaction struct {
 
 var (
 	TomoNativeCoin = &types.Currency{
-	Symbol:   "TOMO",
-	Decimals: 18,
-}
+		Symbol:   "TOMO",
+		Decimals: 18,
+	}
 )
 
 // ValidateNetworkIdentifier validates the network identifier.
