@@ -9,6 +9,7 @@ import (
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tomochaincommon "github.com/tomochain/tomochain/common"
+	"github.com/tomochain/tomochain/common/hexutil"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
 	"github.com/tomochain/tomochain/ethclient"
 	"github.com/tomochain/tomochain/rpc"
@@ -38,10 +39,10 @@ type (
 
 		// GetAccount returns the TomoChain staking account for given owner address
 		// at given height.
-		GetAccount(ctx context.Context, blockHash tomochaincommon.Hash, owner string) (*types.AccountBalanceResponse, error)
+		GetAccount(ctx context.Context, blockNumber *big.Int, owner string) (*types.AccountBalanceResponse, error)
 
 		// SubmitTx submits the given encoded transaction to the node.
-		SubmitTx(ctx context.Context, tx tomochaintypes.Transaction) (txid string, err error)
+		SubmitTx(ctx context.Context, signedTx hexutil.Bytes) (txid string, err error)
 
 		// GetBlockTransactions returns transactions of the block.
 		GetBlockTransactions(ctx context.Context, hash tomochaincommon.Hash) ([]*types.Transaction, error)
@@ -141,8 +142,8 @@ func (c *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.Call
 //TODO: internal transfer via smart contract must be done
 // https://www.rosetta-api.org/docs/all_balance_changing.html
 
-func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockHash tomochaincommon.Hash, owner string) (res *types.AccountBalanceResponse, err error) {
-	block, err := c.GetBlockByHash(ctx, blockHash)
+func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockNumber *big.Int, owner string) (res *types.AccountBalanceResponse, err error) {
+	block, err := c.GetBlockByNumber(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -181,9 +182,20 @@ func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash tomo
 	return c.PackTransaction(ctx, block.Number(), block.Transactions())
 }
 
-func (c *TomoChainRpcClient) SubmitTx(ctx context.Context, tx tomochaintypes.Transaction) (txid string, err error) {
-	// TODO
-	return txid, nil
+func (c *TomoChainRpcClient) SubmitTx(ctx context.Context, signedTx hexutil.Bytes) (string, error) {
+	rpcClient, err := c.ConnectRpc()
+	if err != nil {
+		return "", err
+	}
+	defer rpcClient.Close()
+
+	hash := tomochaincommon.Hash{}
+	err = rpcClient.CallContext(ctx, &hash, common.RPC_METHOD_SEND_SIGNED_TRANSACTION, signedTx)
+	if err != nil {
+		return "", err
+	}
+
+	return hash.String(), nil
 }
 
 func (c *TomoChainRpcClient) GetConfig() *config.Config {
@@ -252,7 +264,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 						Index: 0,
 					},
 					RelatedOperations: nil,
-					Type:              common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+					Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
 					Status:            common.SUCSESS,
 					Account: &types.AccountIdentifier{
 						Address: (*tx.From()).String(),
@@ -276,7 +288,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 							Index: 0,
 						},
 					},
-					Type:   common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+					Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
 					Status: common.SUCSESS,
 					Account: &types.AccountIdentifier{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
@@ -306,7 +318,7 @@ func (c *TomoChainRpcClient) GetMempool(ctx context.Context) ([]tomochaincommon.
 	defer rpcClient.Close()
 
 	pendingTxs := []*common.RPCTransaction{}
-	err = rpcClient.CallContext(ctx, &pendingTxs, "eth_pendingTransactions")
+	err = rpcClient.CallContext(ctx, &pendingTxs, common.RPC_METHOD_GET_PENDING_TRANSACTIONS)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +338,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 	defer rpcClient.Close()
 
 	pendingTxs := []*common.RPCTransaction{}
-	err = rpcClient.CallContext(ctx, &pendingTxs, "eth_pendingTransactions")
+	err = rpcClient.CallContext(ctx, &pendingTxs, common.RPC_METHOD_GET_PENDING_TRANSACTIONS)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +365,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 							Index: 0,
 						},
 						RelatedOperations: nil,
-						Type:              common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+						Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
 						Status:            common.SUCSESS,
 						Account: &types.AccountIdentifier{
 							Address: tx.From.String(),
@@ -377,7 +389,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 								Index: 0,
 							},
 						},
-						Type:   common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
+						Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
 						Status: common.SUCSESS,
 						Account: &types.AccountIdentifier{
 							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet

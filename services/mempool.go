@@ -27,7 +27,7 @@ func (m *mempoolAPIService) Mempool(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.MempoolResponse, *types.Error) {
-	terr := common.ValidateNetworkIdentifier(ctx, m.client, request.NetworkIdentifier)
+	terr := ValidateNetworkIdentifier(ctx, m.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
@@ -50,7 +50,7 @@ func (m *mempoolAPIService) MempoolTransaction(
 	ctx context.Context,
 	request *types.MempoolTransactionRequest,
 ) (*types.MempoolTransactionResponse, *types.Error) {
-	terr := common.ValidateNetworkIdentifier(ctx, m.client, request.NetworkIdentifier)
+	terr := ValidateNetworkIdentifier(ctx, m.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}

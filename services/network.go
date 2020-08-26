@@ -47,7 +47,7 @@ func (s *networkAPIService) NetworkStatus(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkStatusResponse, *types.Error) {
-	terr := common.ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
+	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
@@ -75,7 +75,7 @@ func (s *networkAPIService) NetworkOptions(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkOptionsResponse, *types.Error) {
-	terr := common.ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
+	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
@@ -100,4 +100,23 @@ func (s *networkAPIService) NetworkOptions(
 			Errors:         common.ErrorList,
 		},
 	}, nil
+}
+
+// ValidateNetworkIdentifier validates the network identifier.
+func ValidateNetworkIdentifier(ctx context.Context, client tc.TomoChainClient, ni *types.NetworkIdentifier) *types.Error {
+	if ni != nil {
+		if ni.Blockchain != common.TomoChainBlockchain {
+			return common.ErrInvalidBlockchain
+		}
+		if ni.SubNetworkIdentifier != nil {
+			return common.ErrInvalidSubnetwork
+		}
+
+		if chainId, err := client.GetChainID(ctx); err != nil || chainId.Uint64() != common.TomoChainMainnetNetWorkId {
+			return common.ErrInvalidNetwork
+		}
+	} else {
+		return common.ErrMissingNID
+	}
+	return nil
 }

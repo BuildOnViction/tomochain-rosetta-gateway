@@ -27,14 +27,14 @@ func (s *blockAPIService) Block(
 	ctx context.Context,
 	request *types.BlockRequest,
 ) (*types.BlockResponse, *types.Error) {
-	terr := common.ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
+	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
 
 	var (
 		block *types.Block
-		err error
+		err   error
 	)
 	if request.BlockIdentifier != nil {
 		if request.BlockIdentifier.Hash != nil {
@@ -46,7 +46,6 @@ func (s *blockAPIService) Block(
 	if err != nil || block == nil {
 		return nil, common.ErrUnableToGetBlk
 	}
-
 
 	resp := &types.BlockResponse{
 		Block: block,
