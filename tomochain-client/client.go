@@ -94,12 +94,12 @@ func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
 	return big.NewInt(int64(id)), nil
 }
 
-func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (res *types.Block, err error) {
+func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	block, err := c.ethClient.BlockByNumber(ctx, number)
 	if err != nil {
 		return nil, err
 	}
-	return c.PackBlockData(block), nil
+	return c.PackBlockData(ctx, block)
 }
 
 func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochaincommon.Hash) (res *types.Block, err error) {
@@ -107,7 +107,7 @@ func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochainc
 	if err != nil {
 		return nil, err
 	}
-	return c.PackBlockData(block), nil
+	return c.PackBlockData(ctx, block)
 }
 
 func (c *TomoChainRpcClient) GetLatestBlock(ctx context.Context) (*types.Block, error) {
@@ -119,7 +119,7 @@ func (c *TomoChainRpcClient) GetGenesisBlock(ctx context.Context) (*types.Block,
 	if err != nil {
 		return nil, err
 	}
-	return c.PackBlockData(block), nil
+	return c.PackBlockData(ctx, block)
 }
 
 func (c *TomoChainRpcClient) SuggestGasPrice(ctx context.Context) (uint64, error) {
@@ -178,7 +178,7 @@ func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash tomo
 	if err != nil {
 		return []*types.Transaction{}, err
 	}
-	return c.PackTransaction(block.Transactions()), nil
+	return c.PackTransaction(ctx, block.Number(), block.Transactions())
 }
 
 func (c *TomoChainRpcClient) SubmitTx(ctx context.Context, tx tomochaintypes.Transaction) (txid string, err error) {
@@ -190,24 +190,58 @@ func (c *TomoChainRpcClient) GetConfig() *config.Config {
 	return c.cfg
 }
 
-func (c *TomoChainRpcClient) PackBlockData(block *tomochaintypes.Block) (res *types.Block) {
+func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochaintypes.Block) (*types.Block, error) {
+	var parent *types.BlockIdentifier
+	if block.Number().Int64() > 0 {
+		parent = &types.BlockIdentifier{
+			Index: block.Number().Int64() - 1,
+			Hash:  block.ParentHash().String(),
+		}
+	}
+	transactions, err := c.PackTransaction(ctx,  block.Number(), block.Transactions())
+	if err != nil {
+		return nil, err
+	}
 	return &types.Block{
 		BlockIdentifier: &types.BlockIdentifier{
 			Index: block.Number().Int64(),
 			Hash:  block.Hash().String(),
 		},
-		ParentBlockIdentifier: &types.BlockIdentifier{
-			Index: block.Number().Int64() - 1,
-			Hash:  block.ParentHash().String(),
-		},
+		ParentBlockIdentifier: parent,
 		Timestamp:    new(big.Int).Mul(block.Time(), big.NewInt(1000)).Int64(),
-		Transactions: c.PackTransaction(block.Transactions()),
-	}
+		Transactions: transactions,
+	}, nil
 }
 
-func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transactions) []*types.Transaction {
+func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *big.Int, transactions tomochaintypes.Transactions) ([]*types.Transaction, error) {
 	result := []*types.Transaction{}
+	balances := map[tomochaincommon.Address]*big.Int{}
 	for _, tx := range transactions {
+		var (
+			fromBalance, toBalance *big.Int
+			ok bool
+			err error
+			)
+		from := *tx.From()
+		to := *tx.To()
+
+		if fromBalance, ok = balances[from]; !ok {
+			fromBalance, err = c.ethClient.BalanceAt(ctx, from, new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
+			if err != nil {
+				return []*types.Transaction{}, err
+			}
+		}
+		if toBalance, ok = balances[to]; !ok {
+			toBalance, err = c.ethClient.BalanceAt(ctx, to,  new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
+			if err != nil {
+				return []*types.Transaction{}, err
+			}
+		}
+		// update new balance
+		balances[from] = new(big.Int).Sub(fromBalance, tx.Value())
+		balances[to] = new(big.Int).Add(toBalance, tx.Value())
+
+
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
 				Hash: tx.Hash().String(),
@@ -215,23 +249,34 @@ func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transac
 			Operations: []*types.Operation{
 				// sender
 				{
-					OperationIdentifier: nil,
+					OperationIdentifier: &types.OperationIdentifier{
+						Index:        0,
+					},
 					RelatedOperations:   nil,
 					Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
 					Status:              common.StatusSuccess,
 					Account: &types.AccountIdentifier{
-						Address: tx.From().String(),
+						Address: (*tx.From()).String(),
 					},
 					Amount: &types.Amount{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Value:    tx.Value().Text(10),
+						Value:    "-" + tx.Value().String(), // balance change of sender should be negative
 						Currency: common.TomoNativeCoin,
+					},
+					Metadata: map[string]interface{}{
+						"new_balance": balances[from].String(),
 					},
 				},
 				// recipient
 				{
-					OperationIdentifier: nil,
-					RelatedOperations:   nil,
+					OperationIdentifier: &types.OperationIdentifier{
+						Index:        1,
+					},
+					RelatedOperations:   []*types.OperationIdentifier{
+						{
+							Index: 0,
+						},
+					},
 					Type:                common.TransactionLogType_name[int32(common.TransactionLogType_NATIVE_TRANSFER)],
 					Status:              common.StatusSuccess,
 					Account: &types.AccountIdentifier{
@@ -243,11 +288,14 @@ func (c *TomoChainRpcClient) PackTransaction(transactions tomochaintypes.Transac
 						Value:    tx.Value().String(),
 						Currency: common.TomoNativeCoin,
 					},
+					Metadata: map[string]interface{}{
+						"new_balance": balances[to].String(),
+					},
 				},
 			},
 		})
 	}
-	return result
+	return result, nil
 }
 
 // GetMempool returns all transactions in mempool
