@@ -397,7 +397,46 @@ func (s *constructionAPIService) ConstructionSubmit(
 
 func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation, error) {
 	// TODO:
-	return nil, nil
+	return []*types.Operation{
+		// sender
+		{
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 0,
+			},
+			Type:   common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			Status: common.SUCSESS,
+			Account: &types.AccountIdentifier{
+				Address: transaction.From().String(),
+			},
+			//FIXME: native transfer only
+			Amount: &types.Amount{
+				Value:    transaction.Value().String(),
+				Currency: common.TomoNativeCoin,
+			},
+		},
+
+		// recipient
+		{
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 1,
+			},
+			RelatedOperations: []*types.OperationIdentifier{
+				{
+					Index: 0,
+				},
+			},
+			Type:   common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			Status: common.SUCSESS,
+			Account: &types.AccountIdentifier{
+				Address: (*(transaction.To())).String(),
+			},
+			//FIXME: native transfer only
+			Amount: &types.Amount{
+				Value:    transaction.Value().String(),
+				Currency: common.TomoNativeCoin,
+			},
+		},
+	}, nil
 }
 
 func parseMetaDataFromTx(transaction *tomochaintypes.Transaction) (map[string]interface{}, error) {
