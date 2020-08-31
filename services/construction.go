@@ -440,6 +440,13 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 }
 
 func parseMetaDataFromTx(transaction *tomochaintypes.Transaction) (map[string]interface{}, error) {
-	// TODO:
-	return nil, nil
+	meta := map[string]interface{}{}
+
+	meta[common.METADATA_SENDER] = transaction.From().String()
+	meta[common.METADATA_RECIPIENT] = (*(transaction.To())).String()
+	meta[common.METADATA_GAS_LIMIT] = transaction.Gas()
+	meta[common.METADATA_GAS_PRICE] = transaction.GasPrice().Uint64()
+	meta[common.METADATA_TRANSACTION_VALUE] = transaction.Value().Uint64()
+	meta[common.METADATA_TRANSACTION_DATA] = transaction.Data()
+	return meta, nil
 }

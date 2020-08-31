@@ -55,7 +55,7 @@ func main() {
 	}
 	client, err := tc.NewTomoChainClient(cfg)
 	if err != nil {
-		log.Fatalf("ERROR: Failed to prepare TomoChain gRPC client: %v\n", err)
+		log.Fatalf("ERROR: Failed to prepare TomoChain RPC client: %v\n", err)
 	}
 
 	// Start the server.
