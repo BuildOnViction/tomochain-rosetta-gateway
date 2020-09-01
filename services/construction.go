@@ -404,7 +404,7 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 				Index: 0,
 			},
 			Type:   common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
-			Status: common.SUCSESS,
+			Status: common.SUCCESS,
 			Account: &types.AccountIdentifier{
 				Address: transaction.From().String(),
 			},
@@ -426,7 +426,7 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 				},
 			},
 			Type:   common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
-			Status: common.SUCSESS,
+			Status: common.SUCCESS,
 			Account: &types.AccountIdentifier{
 				Address: (*(transaction.To())).String(),
 			},

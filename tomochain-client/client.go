@@ -253,6 +253,15 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 		balances[from] = new(big.Int).Sub(fromBalance, tx.Value())
 		balances[to] = new(big.Int).Add(toBalance, tx.Value())
 
+		// get transaction receipt
+		status := ""
+		transactionReceipt, err := c.ethClient.TransactionReceipt(ctx, tx.Hash())
+		if err != nil || transactionReceipt == nil || transactionReceipt.Status == uint(0) {
+			status = common.FAIL
+		} else {
+			status = common.SUCCESS
+		}
+
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
 				Hash: tx.Hash().String(),
@@ -265,7 +274,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 					},
 					RelatedOperations: nil,
 					Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
-					Status:            common.SUCSESS,
+					Status:            status,
 					Account: &types.AccountIdentifier{
 						Address: (*tx.From()).String(),
 					},
@@ -289,7 +298,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 						},
 					},
 					Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
-					Status: common.SUCSESS,
+					Status: status,
 					Account: &types.AccountIdentifier{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 						Address: (*(tx.To())).String(),
@@ -366,7 +375,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 						},
 						RelatedOperations: nil,
 						Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
-						Status:            common.SUCSESS,
+						Status:            common.PENDING,
 						Account: &types.AccountIdentifier{
 							Address: tx.From.String(),
 						},
@@ -390,7 +399,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 							},
 						},
 						Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
-						Status: common.SUCSESS,
+						Status: common.PENDING,
 						Account: &types.AccountIdentifier{
 							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
 							Address: (*(tx.To)).String(),

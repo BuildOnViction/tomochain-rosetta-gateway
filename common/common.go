@@ -17,8 +17,9 @@ const (
 	TomoChainMainnetNetWorkId = 88
 
 	// text
-	SUCSESS                    = "SUCCESS"
+	SUCCESS                    = "SUCCESS"
 	FAIL                       = "FAIL"
+	PENDING                    = "PENDING"
 	METADATA_NEW_BALANCE       = "new_balance"
 	METADATA_SEQUENCE_NUMBER   = "sequence_number"
 	METADATA_RECENT_BLOCK_HASH = "recent_block_hash"

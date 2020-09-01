@@ -88,7 +88,7 @@ func (s *networkAPIService) NetworkOptions(
 		Allow: &types.Allow{
 			OperationStatuses: []*types.OperationStatus{
 				{
-					Status:     common.SUCSESS,
+					Status:     common.SUCCESS,
 					Successful: true,
 				},
 				{
