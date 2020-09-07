@@ -39,7 +39,7 @@ type (
 
 		// GetAccount returns the TomoChain staking account for given owner address
 		// at given height.
-		GetAccount(ctx context.Context, blockNumber *big.Int, owner string) (*types.AccountBalanceResponse, error)
+		GetAccount(ctx context.Context, owner string) (*types.AccountBalanceResponse, error)
 
 		// SubmitTx submits the given encoded transaction to the node.
 		SubmitTx(ctx context.Context, signedTx hexutil.Bytes) (txid string, err error)
@@ -142,15 +142,15 @@ func (c *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.Call
 //TODO: internal transfer via smart contract must be done
 // https://www.rosetta-api.org/docs/all_balance_changing.html
 
-func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockNumber *big.Int, owner string) (res *types.AccountBalanceResponse, err error) {
-	block, err := c.GetBlockByNumber(ctx, blockNumber)
+func (c *TomoChainRpcClient) GetAccount(ctx context.Context, owner string) (res *types.AccountBalanceResponse, err error) {
+	block, err := c.GetBlockByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	res = &types.AccountBalanceResponse{}
 	res.BlockIdentifier = block.BlockIdentifier
 
-	balance, err := c.ethClient.BalanceAt(ctx, tomochaincommon.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	balance, err := c.ethClient.BalanceAt(ctx, tomochaincommon.HexToAddress(owner), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, blockNumber *big.In
 	res.Coins = nil
 
 	// attach nonce
-	nonce, err := c.ethClient.NonceAt(ctx, tomochaincommon.HexToAddress(owner), big.NewInt(block.BlockIdentifier.Index))
+	nonce, err := c.ethClient.NonceAt(ctx, tomochaincommon.HexToAddress(owner), nil)
 	if err != nil {
 		return nil, err
 	}

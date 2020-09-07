@@ -8,7 +8,6 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
-	"math/big"
 )
 
 type accountAPIService struct {
@@ -31,7 +30,7 @@ func (s *accountAPIService) AccountBalance(
 	if terr != nil {
 		return nil, terr
 	}
-	resp, err := s.client.GetAccount(ctx, big.NewInt(*(request.BlockIdentifier.Index)), request.AccountIdentifier.Address)
+	resp, err := s.client.GetAccount(ctx, request.AccountIdentifier.Address)
 	if err != nil {
 		return nil, common.ErrUnableToGetAccount
 	}

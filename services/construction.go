@@ -184,16 +184,16 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 	}
 
 	d, ok := options[common.METADATA_TRANSACTION_DATA]
-	if !ok {
+	if !ok || d == nil {
 		d = []byte{}
 	}
 
 	callMsg := tomochain.CallMsg{
 		From:            tomochaincommon.HexToAddress(sender.(string)),
 		To:              &destinationAddress,
-		Gas:             gasLimit.(uint64),
-		GasPrice:        new(big.Int).SetUint64(gasPrice.(uint64)),
-		Value:           new(big.Int).SetUint64(v.(uint64)),
+		Gas:             cast.ToUint64(gasLimit),
+		GasPrice:        new(big.Int).SetUint64(cast.ToUint64(gasPrice)),
+		Value:           new(big.Int).SetUint64(cast.ToUint64(v)),
 		Data:            d.([]byte),
 		BalanceTokenFee: nil,
 	}
@@ -217,7 +217,7 @@ func (s *constructionAPIService) ConstructionMetadata(
 	if err != nil {
 		return nil, common.ErrUnableToEstimateGas
 	}
-	account, err := s.client.GetAccount(ctx, nil, callMsg.From.String())
+	account, err := s.client.GetAccount(ctx, callMsg.From.String())
 	if err != nil {
 		terr := common.ErrUnableToGetAccount
 		terr.Message += err.Error()
@@ -292,7 +292,7 @@ func (s *constructionAPIService) ConstructionPayloads(
 		return nil, terr
 	}
 	addr := request.Operations[0].Account.Address
-	account, err := s.client.GetAccount(ctx, nil, addr)
+	account, err := s.client.GetAccount(ctx, addr)
 	if err != nil {
 		terr := common.ErrServiceInternal
 		terr.Message += err.Error()
@@ -352,7 +352,6 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	// recipient
 	options[common.METADATA_RECIPIENT] = request.Operations[1].Account.Address
 
-	// XXX it is unclear where these meta data should be
 	if request.Metadata[common.METADATA_GAS_LIMIT] != nil {
 		options[common.METADATA_GAS_LIMIT] = request.Metadata[common.METADATA_GAS_LIMIT]
 	}
