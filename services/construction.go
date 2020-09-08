@@ -164,7 +164,7 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 		terr.Message += "empty sender address"
 		return tomochain.CallMsg{}, terr
 	}
-	destinationAddress := tomochaincommon.HexToAddress(to.(string))
+	destinationAddress := tomochaincommon.HexToAddress(cast.ToString(to))
 
 	gasLimit, ok := options[common.METADATA_GAS_LIMIT]
 	if !ok {
@@ -175,12 +175,12 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 
 	gasPrice, ok := options[common.METADATA_GAS_PRICE]
 	if !ok {
-		gasPrice = big.NewInt(tomochaincommon.DefaultMinGasPrice)
+		gasPrice = tomochaincommon.DefaultMinGasPrice
 	}
 
 	v, ok := options[common.METADATA_TRANSACTION_VALUE]
 	if !ok {
-		v = big.NewInt(0)
+		v = uint64(0)
 	}
 
 	d, ok := options[common.METADATA_TRANSACTION_DATA]
@@ -189,7 +189,7 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 	}
 
 	callMsg := tomochain.CallMsg{
-		From:            tomochaincommon.HexToAddress(sender.(string)),
+		From:            tomochaincommon.HexToAddress(cast.ToString(sender)),
 		To:              &destinationAddress,
 		Gas:             cast.ToUint64(gasLimit),
 		GasPrice:        new(big.Int).SetUint64(cast.ToUint64(gasPrice)),
@@ -271,7 +271,7 @@ func (s *constructionAPIService) ConstructionParse(
 		Operations: ops,
 		Metadata:   meta,
 	}
-	sender := meta[common.METADATA_SENDER].(string)
+	sender := cast.ToString(meta[common.METADATA_SENDER])
 	if request.Signed {
 		resp.Signers = []string{sender}
 	}
