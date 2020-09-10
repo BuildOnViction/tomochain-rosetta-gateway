@@ -203,6 +203,9 @@ func (c *TomoChainRpcClient) GetConfig() *config.Config {
 }
 
 func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochaintypes.Block) (*types.Block, error) {
+	if block == nil {
+		return nil, nil
+	}
 	var parent *types.BlockIdentifier
 	if block.Number().Int64() > 0 {
 		parent = &types.BlockIdentifier{

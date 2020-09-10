@@ -41,7 +41,13 @@ func (s *blockAPIService) Block(
 			block, err = s.client.GetBlockByHash(ctx, tomochaincommon.HexToHash(*(request.BlockIdentifier.Hash)))
 		} else if request.BlockIdentifier.Index != nil {
 			block, err = s.client.GetBlockByNumber(ctx, big.NewInt(*(request.BlockIdentifier.Index)))
+		} else {
+			// get latest block
+			block, err = s.client.GetBlockByNumber(ctx, nil)
 		}
+	} else {
+		// get latest block
+		block, err = s.client.GetBlockByNumber(ctx, nil)
 	}
 	if err != nil || block == nil {
 		return nil, common.ErrUnableToGetBlk
