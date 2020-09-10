@@ -13,7 +13,7 @@ type TransactionType uint64
 
 const (
 	// tomochain network information
-	TomoChainBlockchain       = "tomochain"
+	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
 
 	// text
