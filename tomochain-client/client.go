@@ -267,7 +267,7 @@ func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash tomo
 	if err != nil {
 		return []*types.Transaction{}, err
 	}
-	return c.PackTransaction(ctx, block.Number(), block.Transactions())
+	return c.PackTransaction(ctx, block)
 }
 
 func (c *TomoChainRpcClient) SubmitTx(ctx context.Context, signedTx hexutil.Bytes) (string, error) {
@@ -301,7 +301,7 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 			Hash:  block.ParentHash().String(),
 		}
 	}
-	transactions, err := c.PackTransaction(ctx, block.Number(), block.Transactions())
+	transactions, err := c.PackTransaction(ctx, block)
 	if err != nil {
 		return nil, err
 	}
@@ -316,9 +316,22 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 	}, nil
 }
 
-func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *big.Int, transactions tomochaintypes.Transactions) ([]*types.Transaction, error) {
+func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomochaintypes.Block) ([]*types.Transaction, error) {
 	result := []*types.Transaction{}
+	blockNumber := block.Number()
+	previousBlockNumber := new(big.Int).Sub(blockNumber, tomochaincommon.Big1)
+	transactions := block.Transactions()
+	sealer := block.Header().Coinbase
+
 	balances := map[tomochaincommon.Address]*big.Int{}
+
+	// balance of sealer of this block
+	sealerBalance, err := c.ethClient.BalanceAt(ctx, sealer, previousBlockNumber)
+	if err != nil {
+		return []*types.Transaction{}, err
+	}
+	balances[sealer] = sealerBalance
+
 	for _, tx := range transactions {
 		var (
 			fromBalance, toBalance *big.Int
@@ -328,20 +341,17 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 		from := *tx.From()
 		to := *tx.To()
 		if fromBalance, ok = balances[from]; !ok {
-			fromBalance, err = c.ethClient.BalanceAt(ctx, from, new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
+			fromBalance, err = c.ethClient.BalanceAt(ctx, from, previousBlockNumber)
 			if err != nil {
 				return []*types.Transaction{}, err
 			}
 		}
 		if toBalance, ok = balances[to]; !ok {
-			toBalance, err = c.ethClient.BalanceAt(ctx, to, new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
+			toBalance, err = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
 			if err != nil {
 				return []*types.Transaction{}, err
 			}
 		}
-		// update new balance
-		balances[from] = new(big.Int).Sub(fromBalance, tx.Value())
-		balances[to] = new(big.Int).Add(toBalance, tx.Value())
 
 		// get transaction receipt
 		status := ""
@@ -351,6 +361,17 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 		} else {
 			status = common.SUCCESS
 		}
+		gasUsed := tomochaincommon.Big0
+		if transactionReceipt != nil {
+			gasUsed = new(big.Int).SetUint64(transactionReceipt.GasUsed)
+		}
+		fee := new(big.Int).Mul(gasUsed, tx.GasPrice())
+
+		// update new balance
+		totalValue := new(big.Int).Add(fee, tx.Value())
+		balances[from] = new(big.Int).Sub(fromBalance, totalValue)
+		balances[to] = new(big.Int).Add(toBalance, tx.Value())
+		balances[sealer] = new(big.Int).Add(balances[sealer], fee)
 
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
@@ -370,7 +391,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 					},
 					Amount: &types.Amount{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), tx.Value()).String(), // balance change of sender should be negative
+						Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), totalValue).String(), // balance change of sender should be negative
 						Currency: common.TomoNativeCoin,
 					},
 					Metadata: map[string]interface{}{
@@ -400,6 +421,32 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 					},
 					Metadata: map[string]interface{}{
 						common.METADATA_NEW_BALANCE: balances[to].String(),
+					},
+				},
+
+				// fee: send to sealer
+				{
+					OperationIdentifier: &types.OperationIdentifier{
+						Index: 2,
+					},
+					RelatedOperations: []*types.OperationIdentifier{
+						{
+							Index: 0,
+						},
+					},
+					Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_GAS_FEE)],
+					Status: status,
+					Account: &types.AccountIdentifier{
+						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+						Address: (*(tx.To())).String(),
+					},
+					Amount: &types.Amount{
+						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+						Value:    fee.String(),
+						Currency: common.TomoNativeCoin,
+					},
+					Metadata: map[string]interface{}{
+						common.METADATA_NEW_BALANCE: balances[sealer].String(),
 					},
 				},
 			},
