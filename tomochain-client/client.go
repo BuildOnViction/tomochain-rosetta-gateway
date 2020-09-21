@@ -107,7 +107,13 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	}
 	defer client.Close()
 	var raw json.RawMessage
-	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_NUMBER, hexutil.EncodeBig(number), true)
+	var blockNumber interface{}
+	if number != nil {
+		blockNumber = hexutil.EncodeBig(number)
+	} else {
+		blockNumber = "latest"
+	}
+	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_NUMBER, blockNumber, true)
 	if err != nil {
 		fmt.Println("GetBlockByNumber: Call RPC err" , err)
 		return nil, err
