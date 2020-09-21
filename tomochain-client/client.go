@@ -190,11 +190,7 @@ func (c *TomoChainRpcClient) GetLatestBlock(ctx context.Context) (*types.Block, 
 }
 
 func (c *TomoChainRpcClient) GetGenesisBlock(ctx context.Context) (*types.Block, error) {
-	block, err := c.ethClient.BlockByNumber(ctx, tomochaincommon.Big0)
-	if err != nil {
-		return nil, err
-	}
-	return c.PackBlockData(ctx, block)
+	return c.GetBlockByNumber(ctx, tomochaincommon.Big0)
 }
 
 func (c *TomoChainRpcClient) SuggestGasPrice(ctx context.Context) (uint64, error) {
