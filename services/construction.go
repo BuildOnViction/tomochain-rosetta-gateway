@@ -17,8 +17,6 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/spf13/cast"
-
-	"github.com/tomochain/tomochain/crypto"
 )
 
 type constructionAPIService struct {
@@ -106,7 +104,7 @@ func (s *constructionAPIService) ConstructionDerive(
 	}
 
 	rawPub := request.PublicKey.Bytes
-	addr := tomochaincommon.BytesToAddress(crypto.Keccak256(rawPub[1:])[12:])
+	addr := tc.PubToAddress(rawPub)
 
 	return &types.ConstructionDeriveResponse{
 		Address: addr.String(),

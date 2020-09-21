@@ -15,6 +15,7 @@ const (
 	// tomochain network information
 	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
+	ExtraSeal                 = 65
 
 	// text
 	SUCCESS                    = "SUCCESS"

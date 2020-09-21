@@ -12,7 +12,9 @@ import (
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tomochaincommon "github.com/tomochain/tomochain/common"
 	"github.com/tomochain/tomochain/common/hexutil"
+	"github.com/tomochain/tomochain/consensus/posv"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
+	"github.com/tomochain/tomochain/crypto"
 	"github.com/tomochain/tomochain/ethclient"
 	"github.com/tomochain/tomochain/rpc"
 	"math/big"
@@ -115,12 +117,10 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	}
 	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_NUMBER, blockNumber, true)
 	if err != nil {
-		fmt.Println("GetBlockByNumber: Call RPC err" , err)
 		return nil, err
 	}
 	var data map[string]interface{}
 	if err = json.Unmarshal(raw, &data); err != nil {
-		fmt.Println("GetBlockByNumber: Unmarshal block data error", err)
 		return nil, err
 	}
 	hash := ""
@@ -130,9 +130,16 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	header := &tomochaintypes.Header{}
 	body := &tomochaintypes.Body{}
 	if err:= json.Unmarshal(raw, &header); err != nil {
-		fmt.Println("GetBlockByNumber: Unmarshal header error", err)
 		return nil, err
 	}
+	if err:= json.Unmarshal(raw, &header); err != nil {
+		return nil, err
+	}
+	coinbase, err := GetCoinbaseFromHeader(header)
+	if err != nil {
+		return nil, err
+	}
+	header.Coinbase = coinbase
 	if err:= json.Unmarshal(raw, &body); err != nil {
 		fmt.Println("GetBlockByNumber: Unmarshal body error", err)
 		return nil, err
@@ -177,6 +184,11 @@ func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochainc
 		fmt.Println("GetBlockByHash: Unmarshal header error", err)
 		return nil, err
 	}
+	coinbase, err := GetCoinbaseFromHeader(header)
+	if err != nil {
+		return nil, err
+	}
+	header.Coinbase = coinbase
 	if err:= json.Unmarshal(raw, &body); err != nil {
 		fmt.Println("GetBlockByHash: Unmarshal body error", err)
 		return nil, err
@@ -315,7 +327,6 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, blockNumber *b
 		)
 		from := *tx.From()
 		to := *tx.To()
-
 		if fromBalance, ok = balances[from]; !ok {
 			fromBalance, err = c.ethClient.BalanceAt(ctx, from, new(big.Int).Sub(blockNumber, tomochaincommon.Big1))
 			if err != nil {
@@ -497,4 +508,22 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 		}
 	}
 	return nil, nil
+}
+
+func PubToAddress(pubkey []byte) tomochaincommon.Address {
+	var address tomochaincommon.Address
+	copy(address[:], crypto.Keccak256(pubkey[1:])[12:])
+	return address
+}
+
+func GetCoinbaseFromHeader(header *tomochaintypes.Header) (tomochaincommon.Address, error) {
+	if len(header.Extra) < common.ExtraSeal {
+		return tomochaincommon.Address{}, fmt.Errorf("extra-data %d byte suffix signature missing", common.ExtraSeal)
+	}
+	signature := header.Extra[len(header.Extra)-common.ExtraSeal:]
+	pubkey, err := crypto.Ecrecover(posv.SigHash(header).Bytes(), signature)
+	if err != nil {
+		return tomochaincommon.Address{}, err
+	}
+	return PubToAddress(pubkey), nil
 }
