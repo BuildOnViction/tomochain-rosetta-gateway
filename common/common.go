@@ -37,7 +37,8 @@ const (
 	// rpc method name
 	RPC_METHOD_SEND_SIGNED_TRANSACTION  = "eth_sendRawTransaction"
 	RPC_METHOD_GET_PENDING_TRANSACTIONS = "eth_pendingTransactions"
-
+	RPC_METHOD_GET_BLOCK_BY_NUMBER      = "eth_getBlockByNumber"
+	RPC_METHOD_GET_BLOCK_BY_HASH        = "eth_getBlockByHash"
 	// transaction type code
 	TRANSACTION_TYPE_IN_CONTRACT_TRANSFER       TransactionType = 0
 	TRANSACTION_TYPE_WITHDRAW_BUCKET            TransactionType = 1

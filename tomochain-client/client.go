@@ -4,6 +4,8 @@ package tomochain_client
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
@@ -96,19 +98,91 @@ func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
 }
 
 func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
-	block, err := c.ethClient.BlockByNumber(ctx, number)
+	//FIXME: ethClient.BlockByNumber wrapped block data, always return block without validator data
+	//block, err := c.ethClient.BlockByNumber(ctx, number)
+
+	client, err := c.ConnectRpc()
 	if err != nil {
 		return nil, err
 	}
-	return c.PackBlockData(ctx, block)
+	defer client.Close()
+	var raw json.RawMessage
+	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_NUMBER, hexutil.EncodeBig(number), true)
+	if err != nil {
+		fmt.Println("GetBlockByNumber: Call RPC err" , err)
+		return nil, err
+	}
+	var data map[string]interface{}
+	if err = json.Unmarshal(raw, &data); err != nil {
+		fmt.Println("GetBlockByNumber: Unmarshal block data error", err)
+		return nil, err
+	}
+	hash := ""
+	if data["hash"] != nil {
+		hash = (data["hash"]).(string)
+	}
+	header := &tomochaintypes.Header{}
+	body := &tomochaintypes.Body{}
+	if err:= json.Unmarshal(raw, &header); err != nil {
+		fmt.Println("GetBlockByNumber: Unmarshal header error", err)
+		return nil, err
+	}
+	if err:= json.Unmarshal(raw, &body); err != nil {
+		fmt.Println("GetBlockByNumber: Unmarshal body error", err)
+		return nil, err
+	}
+	block := tomochaintypes.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
+	result := &types.Block{}
+	if result, err = c.PackBlockData(ctx, block); err != nil {
+		return nil, err
+	}
+	// set hash with M2 signature
+	result.BlockIdentifier.Hash = hash
+	return result, nil
 }
 
 func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochaincommon.Hash) (res *types.Block, err error) {
-	block, err := c.ethClient.BlockByHash(ctx, hash)
+	//FIXME: ethClient.GetBlockByHash wrapped block data, always return block without validator data
+	//block, err := c.ethClient.GetBlockByHash(ctx, hash)
+
+	client, err := c.ConnectRpc()
 	if err != nil {
 		return nil, err
 	}
-	return c.PackBlockData(ctx, block)
+	defer client.Close()
+	var raw json.RawMessage
+	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_HASH, hash, true)
+	if err != nil {
+		fmt.Println("GetBlockByHash: Call RPC err" , err)
+		return nil, err
+	}
+	var data map[string]interface{}
+	if err = json.Unmarshal(raw, &data); err != nil {
+		fmt.Println("GetBlockByHash: Unmarshal block data error", err)
+		return nil, err
+	}
+	hashString := ""
+	if data["hash"] != nil {
+		hashString = (data["hash"]).(string)
+	}
+	header := &tomochaintypes.Header{}
+	body := &tomochaintypes.Body{}
+	if err:= json.Unmarshal(raw, &header); err != nil {
+		fmt.Println("GetBlockByHash: Unmarshal header error", err)
+		return nil, err
+	}
+	if err:= json.Unmarshal(raw, &body); err != nil {
+		fmt.Println("GetBlockByHash: Unmarshal body error", err)
+		return nil, err
+	}
+	block := tomochaintypes.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
+	result := &types.Block{}
+	if result, err = c.PackBlockData(ctx, block); err != nil {
+		return nil, err
+	}
+	// set hash with M2 signature
+	result.BlockIdentifier.Hash = hashString
+	return result, nil
 }
 
 func (c *TomoChainRpcClient) GetLatestBlock(ctx context.Context) (*types.Block, error) {
