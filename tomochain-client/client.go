@@ -129,10 +129,10 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	}
 	header := &tomochaintypes.Header{}
 	body := &tomochaintypes.Body{}
-	if err:= json.Unmarshal(raw, &header); err != nil {
+	if err := json.Unmarshal(raw, &header); err != nil {
 		return nil, err
 	}
-	if err:= json.Unmarshal(raw, &header); err != nil {
+	if err := json.Unmarshal(raw, &header); err != nil {
 		return nil, err
 	}
 	coinbase, err := GetCoinbaseFromHeader(header)
@@ -140,17 +140,15 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 		return nil, err
 	}
 	header.Coinbase = coinbase
-	if err:= json.Unmarshal(raw, &body); err != nil {
+	if err := json.Unmarshal(raw, &body); err != nil {
 		fmt.Println("GetBlockByNumber: Unmarshal body error", err)
 		return nil, err
 	}
 	block := tomochaintypes.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
 	result := &types.Block{}
-	if result, err = c.PackBlockData(ctx, block); err != nil {
+	if result, err = c.PackBlockData(ctx, block, tomochaincommon.HexToHash(hash)); err != nil {
 		return nil, err
 	}
-	// set hash with M2 signature
-	result.BlockIdentifier.Hash = hash
 	return result, nil
 }
 
@@ -166,7 +164,7 @@ func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochainc
 	var raw json.RawMessage
 	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_HASH, hash, true)
 	if err != nil {
-		fmt.Println("GetBlockByHash: Call RPC err" , err)
+		fmt.Println("GetBlockByHash: Call RPC err", err)
 		return nil, err
 	}
 	var data map[string]interface{}
@@ -180,7 +178,7 @@ func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochainc
 	}
 	header := &tomochaintypes.Header{}
 	body := &tomochaintypes.Body{}
-	if err:= json.Unmarshal(raw, &header); err != nil {
+	if err := json.Unmarshal(raw, &header); err != nil {
 		fmt.Println("GetBlockByHash: Unmarshal header error", err)
 		return nil, err
 	}
@@ -189,17 +187,15 @@ func (c *TomoChainRpcClient) GetBlockByHash(ctx context.Context, hash tomochainc
 		return nil, err
 	}
 	header.Coinbase = coinbase
-	if err:= json.Unmarshal(raw, &body); err != nil {
+	if err := json.Unmarshal(raw, &body); err != nil {
 		fmt.Println("GetBlockByHash: Unmarshal body error", err)
 		return nil, err
 	}
 	block := tomochaintypes.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
 	result := &types.Block{}
-	if result, err = c.PackBlockData(ctx, block); err != nil {
+	if result, err = c.PackBlockData(ctx, block, tomochaincommon.HexToHash(hashString)); err != nil {
 		return nil, err
 	}
-	// set hash with M2 signature
-	result.BlockIdentifier.Hash = hashString
 	return result, nil
 }
 
@@ -267,7 +263,7 @@ func (c *TomoChainRpcClient) GetBlockTransactions(ctx context.Context, hash tomo
 	if err != nil {
 		return []*types.Transaction{}, err
 	}
-	return c.PackTransaction(ctx, block)
+	return c.PackTransaction(ctx, block, hash)
 }
 
 func (c *TomoChainRpcClient) SubmitTx(ctx context.Context, signedTx hexutil.Bytes) (string, error) {
@@ -290,7 +286,7 @@ func (c *TomoChainRpcClient) GetConfig() *config.Config {
 	return c.cfg
 }
 
-func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochaintypes.Block) (*types.Block, error) {
+func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochaintypes.Block, finalBlockHash tomochaincommon.Hash) (*types.Block, error) {
 	if block == nil {
 		return nil, nil
 	}
@@ -301,14 +297,14 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 			Hash:  block.ParentHash().String(),
 		}
 	}
-	transactions, err := c.PackTransaction(ctx, block)
+	transactions, err := c.PackTransaction(ctx, block, finalBlockHash)
 	if err != nil {
 		return nil, err
 	}
 	return &types.Block{
 		BlockIdentifier: &types.BlockIdentifier{
 			Index: block.Number().Int64(),
-			Hash:  block.Hash().String(),
+			Hash:  finalBlockHash.String(),
 		},
 		ParentBlockIdentifier: parent,
 		Timestamp:             new(big.Int).Mul(block.Time(), big.NewInt(1000)).Int64(),
@@ -316,7 +312,7 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 	}, nil
 }
 
-func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomochaintypes.Block) ([]*types.Transaction, error) {
+func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomochaintypes.Block, finalBlockHash tomochaincommon.Hash) ([]*types.Transaction, error) {
 	result := []*types.Transaction{}
 	blockNumber := block.Number()
 	previousBlockNumber := new(big.Int).Sub(blockNumber, tomochaincommon.Big1)
@@ -345,12 +341,14 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 			if err != nil {
 				return []*types.Transaction{}, err
 			}
+			balances[from] = fromBalance
 		}
 		if toBalance, ok = balances[to]; !ok {
 			toBalance, err = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
 			if err != nil {
 				return []*types.Transaction{}, err
 			}
+			balances[to] = toBalance
 		}
 
 		// get transaction receipt
@@ -369,8 +367,8 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 
 		// update new balance
 		totalValue := new(big.Int).Add(fee, tx.Value())
-		balances[from] = new(big.Int).Sub(fromBalance, totalValue)
-		balances[to] = new(big.Int).Add(toBalance, tx.Value())
+		balances[from] = new(big.Int).Sub(balances[from], totalValue)
+		balances[to] = new(big.Int).Add(balances[to], tx.Value())
 		balances[sealer] = new(big.Int).Add(balances[sealer], fee)
 
 		result = append(result, &types.Transaction{
@@ -450,6 +448,56 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 				},
 			},
 		})
+	}
+
+	// at check point, distribute rewards
+	if block.NumberU64()%common.Epoch == 0 {
+		rewards, err := c.GetBlockReward(ctx, finalBlockHash)
+		if err != nil {
+			return []*types.Transaction{}, err
+		}
+		if rewards != nil {
+			rewardOperations := []*types.Operation{}
+			for _, signer := range rewards {
+				for holder, amount := range signer {
+					holderAddress := tomochaincommon.HexToAddress(holder)
+					if holderBalance, ok := balances[holderAddress]; !ok {
+						holderBalance, err = c.ethClient.BalanceAt(ctx, holderAddress, previousBlockNumber)
+						if err != nil {
+							return []*types.Transaction{}, err
+						}
+						balances[holderAddress] = holderBalance
+					}
+					balances[holderAddress] = new(big.Int).Add(balances[holderAddress], amount)
+
+					rewardOperations = append(rewardOperations, &types.Operation{
+						OperationIdentifier: &types.OperationIdentifier{
+							Index: 0,
+						},
+						RelatedOperations: nil,
+						Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_CLAIM_FROM_REWARDING_FUND)],
+						Status:            common.SUCCESS,
+						Account: &types.AccountIdentifier{
+							Address: holder,
+						},
+						Amount: &types.Amount{
+							Value:    amount.String(),
+							Currency: common.TomoNativeCoin,
+						},
+						Metadata: map[string]interface{}{
+							common.METADATA_NEW_BALANCE: balances[holderAddress].String(),
+						},
+					})
+
+				}
+			}
+			result = append(result, &types.Transaction{
+				TransactionIdentifier: &types.TransactionIdentifier{
+					Hash: finalBlockHash.String(),
+				},
+				Operations: rewardOperations,
+			})
+		}
 	}
 	return result, nil
 }
@@ -552,6 +600,41 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 				},
 			}, nil
 		}
+	}
+	return nil, nil
+}
+
+// GetBlockReward returns rewards of checkpoint block
+func (c *TomoChainRpcClient) GetBlockReward(ctx context.Context, hash tomochaincommon.Hash) (map[string]map[string]*big.Int, error) {
+	rpcClient, err := c.ConnectRpc()
+	if err != nil {
+		return nil, err
+	}
+	defer rpcClient.Close()
+
+	// result structure
+	//{
+	//	"rewards":{
+	//	"signer":{
+	//		"holder":amount,
+	//		"holder":amount
+	//	},
+	//	"signer":{
+	//		"holder":amount,
+	//		"holder":amount
+	//	},
+	//	"signer":{
+	//		"holder":amount,
+	//		"holder":amount
+	//	},
+	//},
+	//}
+	rewards := map[string]map[string]map[string]*big.Int{}
+	if err = rpcClient.CallContext(ctx, &rewards, common.RPC_METHOD_GET_REWARD_BY_HASH, hash); err != nil {
+		return nil, err
+	}
+	if rewards["rewards"] != nil {
+		return rewards["rewards"], nil
 	}
 	return nil, nil
 }

@@ -16,6 +16,7 @@ const (
 	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
 	ExtraSeal                 = 65
+	Epoch                     = 900
 
 	// text
 	SUCCESS                    = "SUCCESS"
@@ -40,6 +41,8 @@ const (
 	RPC_METHOD_GET_PENDING_TRANSACTIONS = "eth_pendingTransactions"
 	RPC_METHOD_GET_BLOCK_BY_NUMBER      = "eth_getBlockByNumber"
 	RPC_METHOD_GET_BLOCK_BY_HASH        = "eth_getBlockByHash"
+	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
+
 	// transaction type code
 	TRANSACTION_TYPE_IN_CONTRACT_TRANSFER       TransactionType = 0
 	TRANSACTION_TYPE_WITHDRAW_BUCKET            TransactionType = 1
