@@ -437,8 +437,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 					Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_GAS_FEE)],
 					Status: status,
 					Account: &types.AccountIdentifier{
-						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Address: (*(tx.To())).String(),
+						Address: sealer.String(),
 					},
 					Amount: &types.Amount{
 						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
