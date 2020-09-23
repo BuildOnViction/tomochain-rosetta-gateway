@@ -130,9 +130,7 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	header := &tomochaintypes.Header{}
 	body := &tomochaintypes.Body{}
 	if err := json.Unmarshal(raw, &header); err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(raw, &header); err != nil {
+		fmt.Println("GetBlockByNumber: Unmarshal header error", err)
 		return nil, err
 	}
 	coinbase, err := GetCoinbaseFromHeader(header)
@@ -472,7 +470,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 
 					rewardOperations = append(rewardOperations, &types.Operation{
 						OperationIdentifier: &types.OperationIdentifier{
-							Index: 0,
+							Index: int64(len(rewardOperations)),
 						},
 						RelatedOperations: nil,
 						Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_CLAIM_FROM_REWARDING_FUND)],
@@ -488,7 +486,6 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 							common.METADATA_NEW_BALANCE: balances[holderAddress].String(),
 						},
 					})
-
 				}
 			}
 			result = append(result, &types.Transaction{
