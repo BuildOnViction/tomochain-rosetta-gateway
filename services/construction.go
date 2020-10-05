@@ -11,6 +11,7 @@ import (
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	tomochaincommon "github.com/tomochain/tomochain/common"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
+	"github.com/tomochain/tomochain/rlp"
 	"math/big"
 	"strconv"
 
@@ -77,7 +78,7 @@ func (s *constructionAPIService) ConstructionCombine(
 		terr.Message += "cannot sign transaction"
 		return nil, terr
 	}
-	signedTxData, err := json.Marshal(signedTx)
+	signedTxData, err := rlp.EncodeToBytes(signedTx)
 	if err != nil {
 		terr := common.ErrServiceInternal
 		terr.Message += "cannot marshal signed transaction"
