@@ -117,10 +117,12 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	}
 	err = client.CallContext(ctx, &raw, common.RPC_METHOD_GET_BLOCK_BY_NUMBER, blockNumber, true)
 	if err != nil {
+		fmt.Println("getBlockByNumber error when calling rpc")
 		return nil, err
 	}
 	var data map[string]interface{}
 	if err = json.Unmarshal(raw, &data); err != nil {
+		fmt.Println("getBlockByNumber error when unmarshalling raw data")
 		return nil, err
 	}
 	hash := ""
@@ -133,9 +135,13 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 		fmt.Println("GetBlockByNumber: Unmarshal header error", err)
 		return nil, err
 	}
-	coinbase, err := GetCoinbaseFromHeader(header)
-	if err != nil {
-		return nil, err
+	var coinbase tomochaincommon.Address
+	if header.Number.Uint64() > 0 {
+		coinbase, err = GetCoinbaseFromHeader(header)
+		if err != nil {
+			fmt.Println("GetBlockByNumber: error get CoinbaseFromHeader", err)
+			return nil, err
+		}
 	}
 	header.Coinbase = coinbase
 	if err := json.Unmarshal(raw, &body); err != nil {
@@ -145,6 +151,7 @@ func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.I
 	block := tomochaintypes.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
 	result := &types.Block{}
 	if result, err = c.PackBlockData(ctx, block, tomochaincommon.HexToHash(hash)); err != nil {
+		fmt.Println("GetBlockByNumber: packing block data error", err)
 		return nil, err
 	}
 	return result, nil
@@ -295,10 +302,19 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 			Hash:  block.ParentHash().String(),
 		}
 	}
-	transactions, err := c.PackTransaction(ctx, block, finalBlockHash)
-	if err != nil {
-		return nil, err
+	var (
+		transactions []*types.Transaction
+		err          error
+	)
+
+	if block.NumberU64() > 0 {
+		transactions, err = c.PackTransaction(ctx, block, finalBlockHash)
+		if err != nil {
+			fmt.Println("PackBlockData error when packing Transaction")
+			return nil, err
+		}
 	}
+
 	return &types.Block{
 		BlockIdentifier: &types.BlockIdentifier{
 			Index: block.Number().Int64(),
