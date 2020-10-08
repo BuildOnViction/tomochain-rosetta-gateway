@@ -38,6 +38,14 @@ func (s *networkAPIService) NetworkList(
 				Blockchain: common.TomoChainBlockchain,
 				Network:    strconv.FormatUint(common.TomoChainMainnetNetWorkId, 10),
 			},
+			{
+				Blockchain: common.TomoChainBlockchain,
+				Network:    strconv.FormatUint(common.TomoChainTestnetNetWorkId, 10),
+			},
+			{
+				Blockchain: common.TomoChainBlockchain,
+				Network:    strconv.FormatUint(common.TomoChainDevnetNetWorkId, 10),
+			},
 		},
 	}, nil
 }
@@ -111,8 +119,11 @@ func ValidateNetworkIdentifier(ctx context.Context, client tc.TomoChainClient, n
 		if ni.SubNetworkIdentifier != nil {
 			return common.ErrInvalidSubnetwork
 		}
-
-		if chainId, err := client.GetChainID(ctx); err != nil || chainId.Uint64() != common.TomoChainMainnetNetWorkId {
+		id, err := strconv.Atoi(ni.Network)
+		if err != nil {
+			return common.ErrInvalidNetwork
+		}
+		if chainId, err := client.GetChainID(ctx); err != nil || chainId.Uint64() != uint64(id) {
 			return common.ErrInvalidNetwork
 		}
 	} else {

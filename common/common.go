@@ -15,6 +15,8 @@ const (
 	// tomochain network information
 	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
+	TomoChainTestnetNetWorkId = 89
+	TomoChainDevnetNetWorkId  = 99
 	ExtraSeal                 = 65
 	Epoch                     = 900
 
