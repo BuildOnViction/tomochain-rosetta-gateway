@@ -349,6 +349,10 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 			err                    error
 		)
 		from := *tx.From()
+		isContractCreated := false
+		if tx.To() == nil {
+			isContractCreated = true
+		}
 		to := *tx.To()
 		if fromBalance, ok = balances[from]; !ok {
 			fromBalance, err = c.ethClient.BalanceAt(ctx, from, previousBlockNumber)
@@ -357,12 +361,14 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 			}
 			balances[from] = fromBalance
 		}
-		if toBalance, ok = balances[to]; !ok {
-			toBalance, err = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
-			if err != nil {
-				return []*types.Transaction{}, err
+		if !isContractCreated {
+			if toBalance, ok = balances[to]; !ok {
+				toBalance, err = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
+				if err != nil {
+					return []*types.Transaction{}, err
+				}
+				balances[to] = toBalance
 			}
-			balances[to] = toBalance
 		}
 
 		// get transaction receipt
@@ -385,82 +391,85 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 		balances[to] = new(big.Int).Add(balances[to], tx.Value())
 		balances[sealer] = new(big.Int).Add(balances[sealer], fee)
 
+		operations := []*types.Operation{
+			// sender
+			{
+				OperationIdentifier: &types.OperationIdentifier{
+					Index: 0,
+				},
+				RelatedOperations: nil,
+				Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
+				Status:            status,
+				Account: &types.AccountIdentifier{
+					Address: (*tx.From()).String(),
+				},
+				Amount: &types.Amount{
+					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+					Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), totalValue).String(), // balance change of sender should be negative
+					Currency: common.TomoNativeCoin,
+				},
+				Metadata: map[string]interface{}{
+					common.METADATA_NEW_BALANCE: balances[from].String(),
+				},
+			},
+			// fee: send to sealer
+			{
+				OperationIdentifier: &types.OperationIdentifier{
+					Index: 1,
+				},
+				RelatedOperations: []*types.OperationIdentifier{
+					{
+						Index: 0,
+					},
+				},
+				Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_GAS_FEE)],
+				Status: status,
+				Account: &types.AccountIdentifier{
+					Address: sealer.String(),
+				},
+				Amount: &types.Amount{
+					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+					Value:    fee.String(),
+					Currency: common.TomoNativeCoin,
+				},
+				Metadata: map[string]interface{}{
+					common.METADATA_NEW_BALANCE: balances[sealer].String(),
+				},
+			},
+		}
+
+		if !isContractCreated {
+			operations = append(operations, &types.Operation{
+				OperationIdentifier: &types.OperationIdentifier{
+					Index: 1,
+				},
+				RelatedOperations: []*types.OperationIdentifier{
+					{
+						Index: 0,
+					},
+				},
+				Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
+				Status: status,
+				Account: &types.AccountIdentifier{
+					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+					Address: (*(tx.To())).String(),
+				},
+				Amount: &types.Amount{
+					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+					Value:    tx.Value().String(),
+					Currency: common.TomoNativeCoin,
+				},
+				Metadata: map[string]interface{}{
+					common.METADATA_NEW_BALANCE: balances[to].String(),
+				},
+			})
+		}
+
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
 				Hash: tx.Hash().String(),
 			},
-			Operations: []*types.Operation{
-				// sender
-				{
-					OperationIdentifier: &types.OperationIdentifier{
-						Index: 0,
-					},
-					RelatedOperations: nil,
-					Type:              common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
-					Status:            status,
-					Account: &types.AccountIdentifier{
-						Address: (*tx.From()).String(),
-					},
-					Amount: &types.Amount{
-						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), totalValue).String(), // balance change of sender should be negative
-						Currency: common.TomoNativeCoin,
-					},
-					Metadata: map[string]interface{}{
-						common.METADATA_NEW_BALANCE: balances[from].String(),
-					},
-				},
-				// recipient
-				{
-					OperationIdentifier: &types.OperationIdentifier{
-						Index: 1,
-					},
-					RelatedOperations: []*types.OperationIdentifier{
-						{
-							Index: 0,
-						},
-					},
-					Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_NATIVE_TRANSFER)],
-					Status: status,
-					Account: &types.AccountIdentifier{
-						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Address: (*(tx.To())).String(),
-					},
-					Amount: &types.Amount{
-						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Value:    tx.Value().String(),
-						Currency: common.TomoNativeCoin,
-					},
-					Metadata: map[string]interface{}{
-						common.METADATA_NEW_BALANCE: balances[to].String(),
-					},
-				},
-
-				// fee: send to sealer
-				{
-					OperationIdentifier: &types.OperationIdentifier{
-						Index: 2,
-					},
-					RelatedOperations: []*types.OperationIdentifier{
-						{
-							Index: 0,
-						},
-					},
-					Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_GAS_FEE)],
-					Status: status,
-					Account: &types.AccountIdentifier{
-						Address: sealer.String(),
-					},
-					Amount: &types.Amount{
-						//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-						Value:    fee.String(),
-						Currency: common.TomoNativeCoin,
-					},
-					Metadata: map[string]interface{}{
-						common.METADATA_NEW_BALANCE: balances[sealer].String(),
-					},
-				},
-			},
+			Operations: operations,
 		})
 	}
 
