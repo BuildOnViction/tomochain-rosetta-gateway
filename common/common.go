@@ -46,43 +46,25 @@ const (
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
 
 	// transaction type code
-	TRANSACTION_TYPE_IN_CONTRACT_TRANSFER       TransactionType = 0
-	TRANSACTION_TYPE_WITHDRAW_BUCKET            TransactionType = 1
-	TRANSACTION_TYPE_CREATE_BUCKET              TransactionType = 2
-	TRANSACTION_TYPE_DEPOSIT_TO_BUCKET          TransactionType = 3
-	TRANSACTION_TYPE_CANDIDATE_SELF_STAKE       TransactionType = 4
-	TRANSACTION_TYPE_CANDIDATE_REGISTRATION_FEE TransactionType = 5
-	TRANSACTION_TYPE_GAS_FEE                    TransactionType = 6
-	TRANSACTION_TYPE_NATIVE_TRANSFER            TransactionType = 7
-	TRANSACTION_TYPE_DEPOSIT_TO_REWARDING_FUND  TransactionType = 8
-	TRANSACTION_TYPE_CLAIM_FROM_REWARDING_FUND  TransactionType = 9
+	TRANSACTION_TYPE_NATIVE_TRANSFER           TransactionType = 0
+	TRANSACTION_TYPE_IN_CONTRACT_TRANSFER      TransactionType = 1
+	TRANSACTION_TYPE_GAS_FEE                   TransactionType = 2
+	TRANSACTION_TYPE_CLAIM_FROM_REWARDING_FUND TransactionType = 3
 )
 
 // Enum value maps for TransactionType.
 var (
 	TRANSACTION_TYPE_NAME = map[int32]string{
-		0: "IN_CONTRACT_TRANSFER",
-		1: "WITHDRAW_BUCKET",
-		2: "CREATE_BUCKET",
-		3: "DEPOSIT_TO_BUCKET",
-		4: "CANDIDATE_SELF_STAKE",
-		5: "CANDIDATE_REGISTRATION_FEE",
-		6: "GAS_FEE",
-		7: "NATIVE_TRANSFER",
-		8: "DEPOSIT_TO_REWARDING_FUND",
-		9: "CLAIM_FROM_REWARDING_FUND",
+		0: "transfer",
+		1: "in_contract_transfer",
+		2: "gas_fee",
+		3: "reward",
 	}
 	TRANSACTION_TYPE_CODE = map[string]int32{
-		"IN_CONTRACT_TRANSFER":       0,
-		"WITHDRAW_BUCKET":            1,
-		"CREATE_BUCKET":              2,
-		"DEPOSIT_TO_BUCKET":          3,
-		"CANDIDATE_SELF_STAKE":       4,
-		"CANDIDATE_REGISTRATION_FEE": 5,
-		"GAS_FEE":                    6,
-		"NATIVE_TRANSFER":            7,
-		"DEPOSIT_TO_REWARDING_FUND":  8,
-		"CLAIM_FROM_REWARDING_FUND":  9,
+		"transfer":             0,
+		"in_contract_transfer": 1,
+		"gas_fee":              2,
+		"reward":               3,
 	}
 )
 
