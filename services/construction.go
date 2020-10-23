@@ -14,6 +14,7 @@ import (
 	"github.com/tomochain/tomochain/rlp"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
@@ -167,9 +168,8 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 
 	gasLimit, ok := options[common.METADATA_GAS_LIMIT]
 	if !ok {
-		terr := common.ErrInvalidInputParam
-		terr.Message += "empty gasLimit"
-		return tomochain.CallMsg{}, terr
+		// set default gaslimit
+		gasLimit = common.DefaultGasLimit
 	}
 
 	gasPrice, ok := options[common.METADATA_GAS_PRICE]
@@ -177,10 +177,14 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 		gasPrice = tomochaincommon.DefaultMinGasPrice
 	}
 
-	v, ok := options[common.METADATA_TRANSACTION_VALUE]
+	v, ok := options[common.METADATA_TRANSACTION_AMOUNT]
 	if !ok {
 		v = uint64(0)
 	}
+
+	// sender amount will be less than 0
+	// so, trim minus character
+	strings.Trim(cast.ToString(v), "-")
 
 	d, ok := options[common.METADATA_TRANSACTION_DATA]
 	if !ok || d == nil {
@@ -444,7 +448,7 @@ func parseMetaDataFromTx(transaction *tomochaintypes.Transaction) (map[string]in
 	meta[common.METADATA_RECIPIENT] = (*(transaction.To())).String()
 	meta[common.METADATA_GAS_LIMIT] = transaction.Gas()
 	meta[common.METADATA_GAS_PRICE] = transaction.GasPrice().Uint64()
-	meta[common.METADATA_TRANSACTION_VALUE] = transaction.Value().Uint64()
+	meta[common.METADATA_TRANSACTION_AMOUNT] = transaction.Value().Uint64()
 	meta[common.METADATA_TRANSACTION_DATA] = transaction.Data()
 	return meta, nil
 }
