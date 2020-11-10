@@ -310,7 +310,7 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 	if block.NumberU64() > 0 {
 		transactions, err = c.PackTransaction(ctx, block, finalBlockHash)
 		if err != nil {
-			fmt.Println("PackBlockData error when packing Transaction")
+			fmt.Println("PackBlockData error when packing Transaction", err)
 			return nil, err
 		}
 	}
@@ -336,10 +336,10 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 	balances := map[tomochaincommon.Address]*big.Int{}
 
 	// balance of sealer of this block
-	sealerBalance, err := c.ethClient.BalanceAt(ctx, sealer, previousBlockNumber)
-	if err != nil {
-		return []*types.Transaction{}, err
-	}
+	sealerBalance, _ := c.ethClient.BalanceAt(ctx, sealer, previousBlockNumber)
+	//if err != nil {
+	//	return []*types.Transaction{}, err
+	//}
 	balances[sealer] = sealerBalance
 
 	for _, tx := range transactions {
@@ -348,25 +348,33 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 			ok                     bool
 			err                    error
 		)
-		from := *tx.From()
+		from := tomochaincommon.Address{}
+		if f := tx.From(); f != nil {
+			from = *f
+		}
 		isContractCreated := false
 		if tx.To() == nil {
 			isContractCreated = true
 		}
-		to := *tx.To()
+		to := tomochaincommon.Address{}
+		if t := tx.To(); t != nil {
+			from = *t
+		}
 		if fromBalance, ok = balances[from]; !ok {
-			fromBalance, err = c.ethClient.BalanceAt(ctx, from, previousBlockNumber)
-			if err != nil {
-				return []*types.Transaction{}, err
-			}
+			fromBalance, _ = c.ethClient.BalanceAt(ctx, from, previousBlockNumber)
+			//if err != nil {
+			//	fmt.Println("Get from balance failed", err, from.String())
+			//	return []*types.Transaction{}, err
+			//}
 			balances[from] = fromBalance
 		}
 		if !isContractCreated {
 			if toBalance, ok = balances[to]; !ok {
-				toBalance, err = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
-				if err != nil {
-					return []*types.Transaction{}, err
-				}
+				toBalance, _ = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
+				//if err != nil {
+				//	fmt.Println("Get to balance failed", err, to.String())
+				//	return []*types.Transaction{}, err
+				//}
 				balances[to] = toBalance
 			}
 		}

@@ -6,7 +6,6 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain/common"
 	"github.com/tomochain/tomochain/common/hexutil"
-	"strconv"
 )
 
 type TransactionType uint64
@@ -19,24 +18,27 @@ const (
 	TomoChainDevnetNetWorkId  = 99
 	ExtraSeal                 = 65
 	Epoch                     = 900
+	DefaultGasLimit           = 10000000
 
 	// text
-	SUCCESS                    = "SUCCESS"
-	FAIL                       = "FAIL"
-	PENDING                    = "PENDING"
-	METADATA_NEW_BALANCE       = "new_balance"
-	METADATA_SEQUENCE_NUMBER   = "sequence_number"
-	METADATA_RECENT_BLOCK_HASH = "recent_block_hash"
-	METADATA_GAS_LIMIT         = "gas_limit"
-	METADATA_GAS_PRICE         = "gas_price"
-	METADATA_RECIPIENT         = "recipient"
-	METADATA_SENDER            = "sender"
-	METADATA_TRANSACTION_TYPE  = "type"
-	METADATA_TRANSACTION_VALUE = "value"
-	METADATA_TRANSACTION_DATA  = "data"
-	METADATA_AMOUNT            = "amount"
-	METADATA_SYMBOL            = "symbol"
-	METADATA_DECIMALS          = "decimals"
+	SUCCESS                     = "SUCCESS"
+	FAIL                        = "FAIL"
+	PENDING                     = "PENDING"
+	METADATA_NEW_BALANCE        = "new_balance"
+	METADATA_SEQUENCE_NUMBER    = "sequence_number"
+	METADATA_RECENT_BLOCK_HASH  = "recent_block_hash"
+	METADATA_GAS_LIMIT          = "gas_limit"
+	METADATA_GAS_PRICE          = "gas_price"
+	METADATA_RECIPIENT          = "recipient"
+	METADATA_SENDER             = "sender"
+	METADATA_TRANSACTION_TYPE   = "type"
+	METADATA_TRANSACTION_AMOUNT = "amount"
+	METADATA_TRANSACTION_DATA   = "data"
+	METADATA_AMOUNT             = "amount"
+	METADATA_SYMBOL             = "symbol"
+	METADATA_DECIMALS           = "decimals"
+	METADATA_NONCE              = "nonce"
+	METADATA_CHAIN_ID           = "chain_id"
 
 	// rpc method name
 	RPC_METHOD_SEND_SIGNED_TRANSACTION  = "eth_sendRawTransaction"
@@ -93,7 +95,7 @@ var (
 )
 
 func (t TransactionType) String() string {
-	return strconv.FormatUint(uint64(t), 10)
+	return TRANSACTION_TYPE_NAME[int32(t)]
 }
 
 func SupportedOperationTypes() []string {

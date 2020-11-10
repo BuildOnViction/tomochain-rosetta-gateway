@@ -5,7 +5,10 @@ package services
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
+	"fmt"
+	"github.com/coinbase/rosetta-sdk-go/server"
+	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/spf13/cast"
 	"github.com/tomochain/tomochain"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
@@ -14,12 +17,18 @@ import (
 	"github.com/tomochain/tomochain/rlp"
 	"math/big"
 	"strconv"
-	"strings"
-
-	"github.com/coinbase/rosetta-sdk-go/server"
-	"github.com/coinbase/rosetta-sdk-go/types"
-	"github.com/spf13/cast"
 )
+
+type transaction struct {
+	From     string   `json:"from"`
+	To       string   `json:"to"`
+	Value    *big.Int `json:"value"`
+	Input    []byte   `json:"input"`
+	Nonce    uint64   `json:"nonce"`
+	GasPrice *big.Int `json:"gas_price"`
+	GasLimit uint64   `json:"gas"`
+	ChainID  *big.Int `json:"chain_id"`
+}
 
 type constructionAPIService struct {
 	client tc.TomoChainClient
@@ -37,6 +46,7 @@ func (s *constructionAPIService) ConstructionCombine(
 	ctx context.Context,
 	request *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionCombine")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -47,8 +57,8 @@ func (s *constructionAPIService) ConstructionCombine(
 		terr.Message += err.Error()
 		return nil, terr
 	}
-	var unsignTx *tomochaintypes.Transaction
-	err = json.Unmarshal(b, &unsignTx)
+	var unsignTx *transaction
+	err = rlp.DecodeBytes(b, unsignTx)
 	if err != nil {
 		terr := common.ErrUnableToParseTx
 		terr.Message += err.Error()
@@ -73,7 +83,16 @@ func (s *constructionAPIService) ConstructionCombine(
 		terr.Message += "invalid network"
 		return nil, terr
 	}
-	signedTx, err := unsignTx.WithSignature(tomochaintypes.NewEIP155Signer(big.NewInt(cast.ToInt64(chainId))), rawSig)
+
+	tomochainTransaction := tomochaintypes.NewTransaction(
+		unsignTx.Nonce,
+		tomochaincommon.HexToAddress(unsignTx.To),
+		unsignTx.Value,
+		unsignTx.GasLimit,
+		unsignTx.GasPrice,
+		unsignTx.Input,
+	)
+	signedTx, err := tomochainTransaction.WithSignature(tomochaintypes.NewEIP155Signer(big.NewInt(cast.ToInt64(chainId))), rawSig)
 	if err != nil {
 		terr := common.ErrServiceInternal
 		terr.Message += "cannot sign transaction"
@@ -95,6 +114,7 @@ func (s *constructionAPIService) ConstructionDerive(
 	ctx context.Context,
 	request *types.ConstructionDeriveRequest,
 ) (*types.ConstructionDeriveResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionDerive")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -118,6 +138,7 @@ func (s *constructionAPIService) ConstructionHash(
 	ctx context.Context,
 	request *types.ConstructionHashRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionHash")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -128,7 +149,7 @@ func (s *constructionAPIService) ConstructionHash(
 		return nil, terr
 	}
 	var tx *tomochaintypes.Transaction
-	err = json.Unmarshal(tran, &tx)
+	err = rlp.DecodeBytes(tran, &tx)
 	if err != nil {
 		terr := common.ErrServiceInternal
 		terr.Message += "unable to unmarshal signed transaction " + err.Error()
@@ -172,19 +193,17 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 		gasLimit = common.DefaultGasLimit
 	}
 
-	gasPrice, ok := options[common.METADATA_GAS_PRICE]
+	gp, ok := options[common.METADATA_GAS_PRICE]
 	if !ok {
-		gasPrice = tomochaincommon.DefaultMinGasPrice
+		gp = tomochaincommon.DefaultMinGasPrice
 	}
+	gasPrice, _ := new(big.Int).SetString(cast.ToString(gp), 10)
 
 	v, ok := options[common.METADATA_TRANSACTION_AMOUNT]
 	if !ok {
-		v = uint64(0)
+		v = 0
 	}
-
-	// sender amount will be less than 0
-	// so, trim minus character
-	strings.Trim(cast.ToString(v), "-")
+	value, _ := new(big.Int).SetString(cast.ToString(v), 10)
 
 	d, ok := options[common.METADATA_TRANSACTION_DATA]
 	if !ok || d == nil {
@@ -195,8 +214,8 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 		From:            tomochaincommon.HexToAddress(cast.ToString(sender)),
 		To:              &destinationAddress,
 		Gas:             cast.ToUint64(gasLimit),
-		GasPrice:        new(big.Int).SetUint64(cast.ToUint64(gasPrice)),
-		Value:           new(big.Int).SetUint64(cast.ToUint64(v)),
+		GasPrice:        gasPrice,
+		Value:           new(big.Int).Abs(value),
 		Data:            d.([]byte),
 		BalanceTokenFee: nil,
 	}
@@ -208,6 +227,7 @@ func (s *constructionAPIService) ConstructionMetadata(
 	ctx context.Context,
 	request *types.ConstructionMetadataRequest,
 ) (*types.ConstructionMetadataResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionMetadata")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -230,6 +250,15 @@ func (s *constructionAPIService) ConstructionMetadata(
 
 	meta[common.METADATA_GAS_LIMIT] = callMsg.Gas
 	meta[common.METADATA_GAS_PRICE] = callMsg.GasPrice
+	meta[common.METADATA_SENDER] = callMsg.From
+
+	v, ok := request.Options[common.METADATA_TRANSACTION_AMOUNT]
+	if !ok {
+		v = 0
+	}
+	value, _ := new(big.Int).SetString(cast.ToString(v), 10)
+	meta[common.METADATA_AMOUNT] = value
+
 	suggestedFee := new(big.Int).Mul(new(big.Int).SetUint64(estimateGas), callMsg.GasPrice)
 
 	return &types.ConstructionMetadataResponse{
@@ -248,35 +277,130 @@ func (s *constructionAPIService) ConstructionParse(
 	ctx context.Context,
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionParse")
+
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
-	var tx *tomochaintypes.Transaction
-	b, err := hex.DecodeString(request.Transaction)
-	if err != nil {
-		return nil, common.ErrUnableToParseTx
-	}
-	err = json.Unmarshal(b, &tx)
-	if err != nil {
-		return nil, common.ErrUnableToParseTx
+	tx := &transaction{}
+
+	if !request.Signed {
+		// decode unsigned transaction
+		b, err := hex.DecodeString(request.Transaction)
+		if err != nil {
+			terr := common.ErrUnableToGetAccount
+			terr.Message += err.Error()
+			return nil, terr
+		}
+		err = rlp.DecodeBytes(b, tx)
+		if err != nil {
+			terr := common.ErrUnableToGetAccount
+			terr.Message += err.Error()
+			return nil, terr
+		}
+	} else {
+		// decode signed transaction
+		t := new(tomochaintypes.Transaction)
+		b, err := hex.DecodeString(request.Transaction)
+		if err != nil {
+			terr := common.ErrUnableToGetAccount
+			terr.Message += err.Error()
+			return nil, terr
+		}
+		err = rlp.DecodeBytes(b, t)
+		if err != nil {
+			terr := common.ErrUnableToGetAccount
+			terr.Message += err.Error()
+			return nil, terr
+		}
+
+		tx.To = t.To().String()
+		tx.Value = t.Value()
+		tx.Input = t.Data()
+		tx.Nonce = t.Nonce()
+		tx.GasPrice = t.GasPrice()
+		tx.GasLimit = t.Gas()
+		tx.ChainID = t.ChainId()
+
+		msg, err := t.AsMessage(tomochaintypes.NewEIP155Signer(t.ChainId()), nil, nil)
+		if err != nil {
+			terr := common.ErrUnableToGetAccount
+			terr.Message += err.Error()
+			return nil, terr
+		}
+
+		tx.From = msg.From().String()
 	}
 
-	ops, err := parseOpsFromTx(tx)
-	if err != nil {
-		return nil, common.ErrUnableToParseTx
-	}
-	meta, err := parseMetaDataFromTx(tx)
-	if err != nil {
-		return nil, common.ErrUnableToParseTx
+	// Ensure valid from address
+	ok := tomochaincommon.IsHexAddress(tx.From)
+	if !ok {
+		terr := common.ErrUnableToGetAccount
+		terr.Message += fmt.Errorf("%s is not a valid address", tx.From).Error()
+		return nil, terr
 	}
 
-	resp := &types.ConstructionParseResponse{
-		Operations: ops,
-		Metadata:   meta,
+	// Ensure valid to address
+	ok = tomochaincommon.IsHexAddress(tx.From)
+	if !ok {
+		terr := common.ErrUnableToGetAccount
+		terr.Message += fmt.Errorf("%s is not a valid address", tx.To).Error()
+		return nil, terr
 	}
-	sender := cast.ToString(meta[common.METADATA_SENDER])
+
+	ops := []*types.Operation{
+		{
+			Type: common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 0,
+			},
+			Account: &types.AccountIdentifier{
+				Address: tx.From,
+			},
+			Amount: &types.Amount{
+				Value:    new(big.Int).Neg(tx.Value).String(),
+				Currency: common.TomoNativeCoin,
+			},
+		},
+		{
+			Type: common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 1,
+			},
+			RelatedOperations: []*types.OperationIdentifier{
+				{
+					Index: 0,
+				},
+			},
+			Account: &types.AccountIdentifier{
+				Address: tx.To,
+			},
+			Amount: &types.Amount{
+				Value:    tx.Value.String(),
+				Currency: common.TomoNativeCoin,
+			},
+		},
+	}
+
+	metaMap := map[string]interface{}{
+		common.METADATA_NONCE:     tx.Nonce,
+		common.METADATA_GAS_PRICE: tx.GasPrice,
+		common.METADATA_CHAIN_ID:  tx.ChainID,
+	}
+	resp := &types.ConstructionParseResponse{}
+
 	if request.Signed {
-		resp.Signers = []string{sender}
+		resp = &types.ConstructionParseResponse{
+			Operations: ops,
+			Signers:    []string{tx.From},
+			Metadata:   metaMap,
+		}
+	} else {
+		resp = &types.ConstructionParseResponse{
+			Operations: ops,
+			Signers:    []string{},
+			Metadata:   metaMap,
+		}
 	}
 	return resp, nil
 }
@@ -286,6 +410,8 @@ func (s *constructionAPIService) ConstructionPayloads(
 	ctx context.Context,
 	request *types.ConstructionPayloadsRequest,
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionPayloads metadata", request.Operations[0].Account.Address)
+
 	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
 		return nil, err
 	}
@@ -305,28 +431,56 @@ func (s *constructionAPIService) ConstructionPayloads(
 	if !ok || nonce == nil {
 		return nil, common.ErrUnableToGetNextNonce
 	}
+	txValue, _ := new(big.Int).SetString(cast.ToString(request.Metadata[common.METADATA_AMOUNT]), 10)
+	gasPrice, _ := new(big.Int).SetString(cast.ToString(request.Metadata[common.METADATA_GAS_PRICE]), 10)
 
+	var txdata []byte
+	if request.Metadata[common.METADATA_TRANSACTION_DATA] != nil {
+		txdata = request.Metadata[common.METADATA_TRANSACTION_DATA].([]byte)
+	}
 	tx := tomochaintypes.NewTransaction(cast.ToUint64(nonce),
 		tomochaincommon.HexToAddress(request.Operations[1].Account.Address),
-		new(big.Int).SetUint64(cast.ToUint64(request.Operations[0].Amount.Value)),
+		txValue,
 		cast.ToUint64(request.Metadata[common.METADATA_GAS_LIMIT]),
-		new(big.Int).SetUint64(cast.ToUint64(request.Operations[0].Amount.Value)),
-		request.Metadata[common.METADATA_TRANSACTION_DATA].([]byte))
+		gasPrice,
+		txdata)
+	checkFrom := request.Operations[0].Account.Address
 
-	d, err := json.Marshal(tx)
+	chainId, err := s.client.GetChainID(ctx)
 	if err != nil {
 		terr := common.ErrServiceInternal
 		terr.Message += err.Error()
 		return nil, terr
 	}
-	unsignedTx := hex.EncodeToString(d)
+
+	unsignedTx := &transaction{
+		From:     checkFrom,
+		To:       request.Operations[1].Account.Address,
+		Value:    tx.Value(),
+		Input:    tx.Data(),
+		Nonce:    tx.Nonce(),
+		GasPrice: gasPrice,
+		GasLimit: tx.Gas(),
+		ChainID:  chainId,
+	}
+
+	d, err := rlp.EncodeToBytes(unsignedTx)
+	if err != nil {
+		terr := common.ErrServiceInternal
+		terr.Message += err.Error()
+		return nil, terr
+	}
+	unsignedTxEncode := hex.EncodeToString(d)
+
+	signer := tomochaintypes.NewEIP155Signer(chainId)
+
 	return &types.ConstructionPayloadsResponse{
-		UnsignedTransaction: unsignedTx,
+		UnsignedTransaction: unsignedTxEncode,
 		Payloads: []*types.SigningPayload{
 			{
-				Address:       request.Operations[0].Account.Address,
-				Bytes:         tx.Hash().Bytes(),
-				SignatureType: types.Ecdsa,
+				Address:       checkFrom,
+				Bytes:         signer.Hash(tx).Bytes(),
+				SignatureType: types.EcdsaRecovery,
 			},
 		},
 	}, nil
@@ -337,6 +491,7 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	ctx context.Context,
 	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionPreprocess", request.Operations[0].Account.Address, request.Operations[0].Amount)
 	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
 		return nil, err
 	}
@@ -348,12 +503,12 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	// sender
 	options[common.METADATA_SENDER] = request.Operations[0].Account.Address
 	options[common.METADATA_TRANSACTION_TYPE] = request.Operations[0].Type
-	options[common.METADATA_AMOUNT] = request.Operations[0].Amount.Value
 	options[common.METADATA_SYMBOL] = request.Operations[0].Amount.Currency.Symbol
 	options[common.METADATA_DECIMALS] = request.Operations[0].Amount.Currency.Decimals
 
 	// recipient
 	options[common.METADATA_RECIPIENT] = request.Operations[1].Account.Address
+	options[common.METADATA_AMOUNT] = request.Operations[1].Amount.Value
 
 	if request.Metadata[common.METADATA_GAS_LIMIT] != nil {
 		options[common.METADATA_GAS_LIMIT] = request.Metadata[common.METADATA_GAS_LIMIT]
@@ -361,21 +516,23 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	if request.Metadata[common.METADATA_GAS_PRICE] != nil {
 		options[common.METADATA_GAS_PRICE] = request.Metadata[common.METADATA_GAS_PRICE]
 	}
-
+	fmt.Println("Preprocess Result", options)
 	return &types.ConstructionPreprocessResponse{
 		Options: options,
 	}, nil
 }
 
-// ConstructionSubmit implements the /construction/submit endpoint.
+// ConstructionSubmit implements the /construction/submit \n\n\n\nENDPOINT.
 func (s *constructionAPIService) ConstructionSubmit(
 	ctx context.Context,
 	request *types.ConstructionSubmitRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionSubmit")
 	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
 	}
+
 	tran, err := hex.DecodeString(request.SignedTransaction)
 	if err != nil {
 		terr := common.ErrInvalidInputParam
@@ -398,7 +555,14 @@ func (s *constructionAPIService) ConstructionSubmit(
 }
 
 func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation, error) {
-	// TODO:
+	value := tomochaincommon.Big0
+	from := tomochaincommon.Address{}
+	if v := transaction.Value(); v != nil {
+		value = transaction.Value()
+	}
+	if f := transaction.From(); f != nil {
+		from = *f
+	}
 	return []*types.Operation{
 		// sender
 		{
@@ -406,13 +570,13 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 				Index: 0,
 			},
 			Type:   common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
-			Status: common.SUCCESS,
+			Status: "",
 			Account: &types.AccountIdentifier{
-				Address: transaction.From().String(),
+				Address: from.String(),
 			},
 			//FIXME: native transfer only
 			Amount: &types.Amount{
-				Value:    transaction.Value().String(),
+				Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), value).String(),
 				Currency: common.TomoNativeCoin,
 			},
 		},
@@ -428,13 +592,13 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 				},
 			},
 			Type:   common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
-			Status: common.SUCCESS,
+			Status: "",
 			Account: &types.AccountIdentifier{
 				Address: (*(transaction.To())).String(),
 			},
 			//FIXME: native transfer only
 			Amount: &types.Amount{
-				Value:    transaction.Value().String(),
+				Value:    value.String(),
 				Currency: common.TomoNativeCoin,
 			},
 		},
@@ -444,11 +608,18 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 func parseMetaDataFromTx(transaction *tomochaintypes.Transaction) (map[string]interface{}, error) {
 	meta := map[string]interface{}{}
 
-	meta[common.METADATA_SENDER] = transaction.From().String()
+	value := tomochaincommon.Big0
+	if v := transaction.Value(); v != nil {
+		value = transaction.Value()
+	}
+	if f := transaction.From(); f != nil {
+		meta[common.METADATA_SENDER] = (*f).String()
+	}
+
 	meta[common.METADATA_RECIPIENT] = (*(transaction.To())).String()
 	meta[common.METADATA_GAS_LIMIT] = transaction.Gas()
 	meta[common.METADATA_GAS_PRICE] = transaction.GasPrice().Uint64()
-	meta[common.METADATA_TRANSACTION_AMOUNT] = transaction.Value().Uint64()
+	meta[common.METADATA_TRANSACTION_AMOUNT] = value.Uint64()
 	meta[common.METADATA_TRANSACTION_DATA] = transaction.Data()
 	return meta, nil
 }
