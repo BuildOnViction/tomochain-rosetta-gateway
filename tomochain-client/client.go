@@ -413,7 +413,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 				},
 				Amount: &types.Amount{
 					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-					Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), totalValue).String(), // balance change of sender should be negative
+					Value:    new(big.Int).Neg(totalValue).String(), // balance change of sender should be negative
 					Currency: common.TomoNativeCoin,
 				},
 				Metadata: map[string]interface{}{
@@ -595,7 +595,7 @@ func (c *TomoChainRpcClient) GetMempoolTransaction(ctx context.Context, hash tom
 						},
 						Amount: &types.Amount{
 							//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-							Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), tx.Value.ToInt()).String(),
+							Value:    new(big.Int).Neg(tx.Value.ToInt()).String(),
 							Currency: common.TomoNativeCoin,
 						},
 						Metadata: map[string]interface{}{

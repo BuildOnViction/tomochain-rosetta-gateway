@@ -576,7 +576,7 @@ func parseOpsFromTx(transaction *tomochaintypes.Transaction) ([]*types.Operation
 			},
 			//FIXME: native transfer only
 			Amount: &types.Amount{
-				Value:    new(big.Int).Sub(new(big.Int).SetUint64(0), value).String(),
+				Value:    new(big.Int).Neg(value).String(),
 				Currency: common.TomoNativeCoin,
 			},
 		},
