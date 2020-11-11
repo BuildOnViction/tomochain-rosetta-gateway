@@ -57,7 +57,7 @@ func (s *constructionAPIService) ConstructionCombine(
 		terr.Message += err.Error()
 		return nil, terr
 	}
-	var unsignTx *transaction
+	unsignTx := &transaction{}
 	err = rlp.DecodeBytes(b, unsignTx)
 	if err != nil {
 		terr := common.ErrUnableToParseTx
@@ -148,7 +148,7 @@ func (s *constructionAPIService) ConstructionHash(
 		terr.Message += "invalid signed transaction format: " + err.Error()
 		return nil, terr
 	}
-	var tx *tomochaintypes.Transaction
+	tx := &tomochaintypes.Transaction{}
 	err = rlp.DecodeBytes(tran, &tx)
 	if err != nil {
 		terr := common.ErrServiceInternal
@@ -431,7 +431,7 @@ func (s *constructionAPIService) ConstructionPayloads(
 	if !ok || nonce == nil {
 		return nil, common.ErrUnableToGetNextNonce
 	}
-	txValue, _ := new(big.Int).SetString(cast.ToString(request.Metadata[common.METADATA_AMOUNT]), 10)
+	txValue, _ := new(big.Int).SetString(cast.ToString(request.Operations[1].Amount.Value), 10)
 	gasPrice, _ := new(big.Int).SetString(cast.ToString(request.Metadata[common.METADATA_GAS_PRICE]), 10)
 
 	var txdata []byte
@@ -491,7 +491,7 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	ctx context.Context,
 	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionPreprocess", request.Operations[0].Account.Address, request.Operations[0].Amount)
+	fmt.Println("\n\n\n\nENDPOINT: ConstructionPreprocess", request.Operations[0].Amount)
 	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
 		return nil, err
 	}
