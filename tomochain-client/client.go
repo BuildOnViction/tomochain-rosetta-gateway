@@ -449,7 +449,7 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 		if !isContractCreated {
 			operations = append(operations, &types.Operation{
 				OperationIdentifier: &types.OperationIdentifier{
-					Index: 1,
+					Index: 2,
 				},
 				RelatedOperations: []*types.OperationIdentifier{
 					{

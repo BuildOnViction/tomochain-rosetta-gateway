@@ -103,6 +103,10 @@ func (s *networkAPIService) NetworkOptions(
 					Status:     common.FAIL,
 					Successful: false,
 				},
+				{
+					Status:     common.PENDING,
+					Successful: false,
+				},
 			},
 			OperationTypes: common.SupportedOperationTypes(),
 			Errors:         common.ErrorList,
