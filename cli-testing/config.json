@@ -1,0 +1,68 @@
+{
+    "network": {
+        "blockchain": "TomoChain",
+        "network": "99"
+    },
+
+    "online_url": "http://localhost:8080",
+    "data_directory": "tomochain-data",
+    "http_timeout": 300,
+    "max_retries": 5,
+    "retry_elapsed_time": 0,
+    "max_online_connections": 0,
+    "max_sync_concurrency": 0,
+    "tip_delay": 60,
+    "log_configuration": false,
+    "construction": {
+        "offline_url": "http://localhost:8080",
+        "max_offline_connections": 10,
+        "stale_depth": 0,
+        "broadcast_limit": 0,
+        "ignore_broadcast_failures": false,
+        "clear_broadcasts": false,
+        "broadcast_behind_tip": false,
+        "block_broadcast_limit": 0,
+        "rebroadcast_all": false,
+        "constructor_dsl_file": "tomochain.ros",
+        "prefunded_accounts": [
+		{
+			"privkey": "xxxx",
+			"account_identifier": {
+				"address": "0x17F2beD710ba50Ed27aEa52fc4bD7Bda5ED4a037"
+			},
+			"curve_type": "secp256k1",
+                        "currency": {
+                     		 "symbol": "TOMO",
+                                 "decimals": 18
+                        }
+		}
+	],
+	"end_conditions": {
+            "create_account": 10,
+            "transfer": 10
+        }
+    },
+    "data": {
+        "active_reconciliation_concurrency": 0,
+        "inactive_reconciliation_concurrency": 0,
+        "inactive_reconciliation_frequency": 0,
+        "log_blocks": false,
+        "log_transactions": false,
+        "log_balance_changes": false,
+        "log_reconciliations": false,
+        "ignore_reconciliation_error": false,
+        "exempt_accounts": "",
+        "bootstrap_balances": "",
+        "interesting_accounts": "",
+        "reconciliation_disabled": false,
+        "inactive_discrepency_search_disabled": false,
+        "balance_tracking_disabled": true,
+        "coin_tracking_disabled": false,
+        "start_index": 85900,
+	"end_conditions": {
+            "tip": true
+        },
+        "results_output_file": ""
+    }
+}
+
