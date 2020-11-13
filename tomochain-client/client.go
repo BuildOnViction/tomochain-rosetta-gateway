@@ -362,19 +362,11 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 		}
 		if fromBalance, ok = balances[from]; !ok {
 			fromBalance, _ = c.ethClient.BalanceAt(ctx, from, previousBlockNumber)
-			//if err != nil {
-			//	fmt.Println("Get from balance failed", err, from.String())
-			//	return []*types.Transaction{}, err
-			//}
 			balances[from] = fromBalance
 		}
 		if !isContractCreated {
 			if toBalance, ok = balances[to]; !ok {
 				toBalance, _ = c.ethClient.BalanceAt(ctx, to, previousBlockNumber)
-				//if err != nil {
-				//	fmt.Println("Get to balance failed", err, to.String())
-				//	return []*types.Transaction{}, err
-				//}
 				balances[to] = toBalance
 			}
 		}

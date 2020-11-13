@@ -47,7 +47,6 @@ func (s *constructionAPIService) ConstructionCombine(
 	ctx context.Context,
 	request *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionCombine")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -115,7 +114,6 @@ func (s *constructionAPIService) ConstructionDerive(
 	ctx context.Context,
 	request *types.ConstructionDeriveRequest,
 ) (*types.ConstructionDeriveResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionDerive")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -142,7 +140,6 @@ func (s *constructionAPIService) ConstructionHash(
 	ctx context.Context,
 	request *types.ConstructionHashRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionHash")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -231,7 +228,6 @@ func (s *constructionAPIService) ConstructionMetadata(
 	ctx context.Context,
 	request *types.ConstructionMetadataRequest,
 ) (*types.ConstructionMetadataResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionMetadata")
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -281,8 +277,6 @@ func (s *constructionAPIService) ConstructionParse(
 	ctx context.Context,
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionParse")
-
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -413,8 +407,6 @@ func (s *constructionAPIService) ConstructionPayloads(
 	ctx context.Context,
 	request *types.ConstructionPayloadsRequest,
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionPayloads metadata", request.Operations[0].Account.Address)
-
 	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
 		return nil, err
 	}
@@ -494,7 +486,6 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	ctx context.Context,
 	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionPreprocess", request.Operations[0].Amount)
 	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
 		return nil, err
 	}
@@ -519,7 +510,6 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	if request.Metadata[common.METADATA_GAS_PRICE] != nil {
 		options[common.METADATA_GAS_PRICE] = request.Metadata[common.METADATA_GAS_PRICE]
 	}
-	fmt.Println("Preprocess Result", options)
 	return &types.ConstructionPreprocessResponse{
 		Options: options,
 	}, nil
@@ -530,7 +520,6 @@ func (s *constructionAPIService) ConstructionSubmit(
 	ctx context.Context,
 	request *types.ConstructionSubmitRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
-	fmt.Println("\n\n\n\nENDPOINT: ConstructionSubmit")
 	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
