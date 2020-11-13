@@ -669,6 +669,16 @@ func (c *TomoChainRpcClient) GetBlockReward(ctx context.Context, hash tomochainc
 	return nil, nil
 }
 
+// derive TomoChain Address from uncompressed public key (65 bytes)
+// if you have compressed public key in 33 bytes format, please decompress it following this sample code
+/**
+	pubkey, err := crypto.DecompressPubkey(request.PublicKey.Bytes)
+	if err != nil {
+	return nil, common.ErrUnableToDecompressPubkey
+	}
+	pubBytes := crypto.FromECDSAPub(pubkey)
+*/
+
 func PubToAddress(pubkey []byte) tomochaincommon.Address {
 	var address tomochaincommon.Address
 	copy(address[:], crypto.Keccak256(pubkey[1:])[12:])

@@ -173,6 +173,12 @@ var (
 		Retriable: true,
 	}
 
+	ErrUnableToDecompressPubkey = &types.Error{
+		Code:      29,
+		Message:   "unable to decompress public key",
+		Retriable: false,
+	}
+
 	ErrorList = []*types.Error{
 		ErrUnableToGetChainID,
 		ErrInvalidBlockchain,
@@ -202,5 +208,6 @@ var (
 		ErrExceededFee,
 		ErrUnableToEstimateGas,
 		ErrUnableToGetSuggestGas,
+		ErrUnableToDecompressPubkey,
 	}
 )

@@ -14,6 +14,7 @@ import (
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	tomochaincommon "github.com/tomochain/tomochain/common"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
+	"github.com/tomochain/tomochain/crypto"
 	"github.com/tomochain/tomochain/rlp"
 	"math/big"
 	"strconv"
@@ -124,9 +125,12 @@ func (s *constructionAPIService) ConstructionDerive(
 		terr.Message += "unsupported public key type"
 		return nil, terr
 	}
-
-	rawPub := request.PublicKey.Bytes
-	addr := tc.PubToAddress(rawPub)
+	pubkey, err := crypto.DecompressPubkey(request.PublicKey.Bytes)
+	if err != nil {
+		return nil, common.ErrUnableToDecompressPubkey
+	}
+	pubBytes := crypto.FromECDSAPub(pubkey)
+	addr := tc.PubToAddress(pubBytes)
 
 	return &types.ConstructionDeriveResponse{
 		Address: addr.String(),
@@ -149,7 +153,7 @@ func (s *constructionAPIService) ConstructionHash(
 		return nil, terr
 	}
 	tx := &tomochaintypes.Transaction{}
-	err = rlp.DecodeBytes(tran, &tx)
+	err = rlp.DecodeBytes(tran, tx)
 	if err != nil {
 		terr := common.ErrServiceInternal
 		terr.Message += "unable to unmarshal signed transaction " + err.Error()
@@ -288,13 +292,13 @@ func (s *constructionAPIService) ConstructionParse(
 		// decode unsigned transaction
 		b, err := hex.DecodeString(request.Transaction)
 		if err != nil {
-			terr := common.ErrUnableToGetAccount
+			terr := common.ErrUnableToParseTx
 			terr.Message += err.Error()
 			return nil, terr
 		}
 		err = rlp.DecodeBytes(b, tx)
 		if err != nil {
-			terr := common.ErrUnableToGetAccount
+			terr := common.ErrUnableToParseTx
 			terr.Message += err.Error()
 			return nil, terr
 		}
@@ -303,13 +307,13 @@ func (s *constructionAPIService) ConstructionParse(
 		t := new(tomochaintypes.Transaction)
 		b, err := hex.DecodeString(request.Transaction)
 		if err != nil {
-			terr := common.ErrUnableToGetAccount
+			terr := common.ErrUnableToParseTx
 			terr.Message += err.Error()
 			return nil, terr
 		}
 		err = rlp.DecodeBytes(b, t)
 		if err != nil {
-			terr := common.ErrUnableToGetAccount
+			terr := common.ErrUnableToParseTx
 			terr.Message += err.Error()
 			return nil, terr
 		}
@@ -328,7 +332,6 @@ func (s *constructionAPIService) ConstructionParse(
 			terr.Message += err.Error()
 			return nil, terr
 		}
-
 		tx.From = msg.From().String()
 	}
 
