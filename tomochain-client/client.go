@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain"
+	"github.com/tomochain/tomochain/eth"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tomochaincommon "github.com/tomochain/tomochain/common"
@@ -69,6 +70,7 @@ type (
 	// TomoChainRpcClient is an implementation of TomoChain client using local rpc/ipc connection.
 	TomoChainRpcClient struct {
 		sync.RWMutex
+		tracerConfig *eth.TraceConfig
 		ethClient *ethclient.Client
 		cfg       *config.Config
 	}
@@ -83,8 +85,13 @@ func NewTomoChainClient(cfg *config.Config) (cli *TomoChainRpcClient, err error)
 	if err != nil {
 		return nil, err
 	}
+	tracerConfig, err := loadTraceConfig()
+	if err != nil {
+		return nil, fmt.Errorf("%w: unable to load trace config", err)
+	}
 	return &TomoChainRpcClient{
 		ethClient: ethClient,
+		tracerConfig: tracerConfig,
 		cfg:       cfg,
 	}, nil
 }
