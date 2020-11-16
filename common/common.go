@@ -46,7 +46,7 @@ const (
 	RPC_METHOD_GET_BLOCK_BY_NUMBER      = "eth_getBlockByNumber"
 	RPC_METHOD_GET_BLOCK_BY_HASH        = "eth_getBlockByHash"
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
-
+	RPC_METHOD_GET_CHAIN_ID             = "eth_chainId"
 	// transaction type code
 	TRANSACTION_TYPE_NATIVE_TRANSFER           TransactionType = 0
 	TRANSACTION_TYPE_IN_CONTRACT_TRANSFER      TransactionType = 1

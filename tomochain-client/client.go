@@ -18,7 +18,6 @@ import (
 	"github.com/tomochain/tomochain/ethclient"
 	"github.com/tomochain/tomochain/rpc"
 	"math/big"
-	"strconv"
 	"sync"
 )
 
@@ -75,6 +74,9 @@ type (
 	}
 )
 
+// cache chainId to avoid spam rpc
+var chainId *big.Int
+
 // NewTomoChainClient returns an implementation of TomoChainClient
 func NewTomoChainClient(cfg *config.Config) (cli *TomoChainRpcClient, err error) {
 	ethClient, err := ethclient.Dial(cfg.Server.Endpoint)
@@ -92,11 +94,17 @@ func (c *TomoChainRpcClient) ConnectRpc() (*rpc.Client, error) {
 }
 
 func (c *TomoChainRpcClient) GetChainID(ctx context.Context) (*big.Int, error) {
-	id, err := strconv.Atoi(c.cfg.NetworkIdentifier.Network)
-	if err != nil {
-		return tomochaincommon.Big0, err
+	if chainId == nil {
+		client, err := c.ConnectRpc()
+		if err != nil {
+			return nil, err
+		}
+		defer client.Close()
+		id := new(hexutil.Uint64)
+		err = client.CallContext(ctx, &id, common.RPC_METHOD_GET_CHAIN_ID)
+		chainId = new(big.Int).SetUint64(uint64(*id))
 	}
-	return big.NewInt(int64(id)), nil
+	return chainId, nil
 }
 
 func (c *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
