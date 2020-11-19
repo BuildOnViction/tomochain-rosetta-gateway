@@ -420,36 +420,12 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 					common.METADATA_NEW_BALANCE: balances[from].String(),
 				},
 			},
-			// fee: send to sealer
-			{
-				OperationIdentifier: &types.OperationIdentifier{
-					Index: 1,
-				},
-				RelatedOperations: []*types.OperationIdentifier{
-					{
-						Index: 0,
-					},
-				},
-				Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_GAS_FEE)],
-				Status: status,
-				Account: &types.AccountIdentifier{
-					Address: sealer.String(),
-				},
-				Amount: &types.Amount{
-					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
-					Value:    fee.String(),
-					Currency: common.TomoNativeCoin,
-				},
-				Metadata: map[string]interface{}{
-					common.METADATA_NEW_BALANCE: balances[sealer].String(),
-				},
-			},
 		}
 
 		if !isContractCreated {
 			operations = append(operations, &types.Operation{
 				OperationIdentifier: &types.OperationIdentifier{
-					Index: 2,
+					Index: 1,
 				},
 				RelatedOperations: []*types.OperationIdentifier{
 					{
@@ -472,6 +448,32 @@ func (c *TomoChainRpcClient) PackTransaction(ctx context.Context, block *tomocha
 				},
 			})
 		}
+
+		// fee: send to sealer
+		operations = append(operations,
+			&types.Operation{
+				OperationIdentifier: &types.OperationIdentifier{
+					Index: int64(len(operations)),
+				},
+				RelatedOperations: []*types.OperationIdentifier{
+					{
+						Index: 0,
+					},
+				},
+				Type:   common.TRANSACTION_TYPE_NAME[int32(common.TRANSACTION_TYPE_GAS_FEE)],
+				Status: status,
+				Account: &types.AccountIdentifier{
+					Address: sealer.String(),
+				},
+				Amount: &types.Amount{
+					//TODO: support native transfer only, not support internal transaction (transfer from contract) yet
+					Value:    fee.String(),
+					Currency: common.TomoNativeCoin,
+				},
+				Metadata: map[string]interface{}{
+					common.METADATA_NEW_BALANCE: balances[sealer].String(),
+				},
+			})
 
 		result = append(result, &types.Transaction{
 			TransactionIdentifier: &types.TransactionIdentifier{
@@ -672,11 +674,11 @@ func (c *TomoChainRpcClient) GetBlockReward(ctx context.Context, hash tomochainc
 // derive TomoChain Address from uncompressed public key (65 bytes)
 // if you have compressed public key in 33 bytes format, please decompress it following this sample code
 /**
-	pubkey, err := crypto.DecompressPubkey(request.PublicKey.Bytes)
-	if err != nil {
-	return nil, common.ErrUnableToDecompressPubkey
-	}
-	pubBytes := crypto.FromECDSAPub(pubkey)
+pubkey, err := crypto.DecompressPubkey(request.PublicKey.Bytes)
+if err != nil {
+return nil, common.ErrUnableToDecompressPubkey
+}
+pubBytes := crypto.FromECDSAPub(pubkey)
 */
 
 func PubToAddress(pubkey []byte) tomochaincommon.Address {
