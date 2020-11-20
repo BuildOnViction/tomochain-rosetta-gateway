@@ -7,6 +7,7 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
+	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	tomochaincommon "github.com/tomochain/tomochain/common"
 	"math/big"
@@ -27,6 +28,10 @@ func (s *blockAPIService) Block(
 	ctx context.Context,
 	request *types.BlockRequest,
 ) (*types.BlockResponse, *types.Error) {
+	if s.client.GetConfig().Server.Mode != config.ServerModeOnline {
+		return nil, common.ErrUnavailableOffline
+	}
+
 	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr

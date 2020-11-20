@@ -179,6 +179,12 @@ var (
 		Retriable: false,
 	}
 
+	ErrUnavailableOffline = &types.Error{
+		Code:      30,
+		Message:   "Endpoint unavailable offline",
+		Retriable: false,
+	}
+
 	ErrorList = []*types.Error{
 		ErrUnableToGetChainID,
 		ErrInvalidBlockchain,
@@ -209,5 +215,6 @@ var (
 		ErrUnableToEstimateGas,
 		ErrUnableToGetSuggestGas,
 		ErrUnableToDecompressPubkey,
+		ErrUnavailableOffline,
 	}
 )

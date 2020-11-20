@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/tomochain/tomochain"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
+	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	tomochaincommon "github.com/tomochain/tomochain/common"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
@@ -212,6 +213,9 @@ func (s *constructionAPIService) ConstructionMetadata(
 	ctx context.Context,
 	request *types.ConstructionMetadataRequest,
 ) (*types.ConstructionMetadataResponse, *types.Error) {
+	if s.client.GetConfig().Server.Mode != config.ServerModeOnline {
+		return nil, common.ErrUnavailableOffline
+	}
 	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
 		return nil, terr
 	}
@@ -485,6 +489,9 @@ func (s *constructionAPIService) ConstructionSubmit(
 	ctx context.Context,
 	request *types.ConstructionSubmitRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
+	if s.client.GetConfig().Server.Mode != config.ServerModeOnline {
+		return nil, common.ErrUnavailableOffline
+	}
 	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr

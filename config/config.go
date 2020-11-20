@@ -7,6 +7,11 @@ import (
 	uconfig "go.uber.org/config"
 )
 
+const (
+	ServerModeOnline  = "online"
+	ServerModeOffline = "offline"
+)
+
 type (
 	NetworkIdentifier struct {
 		Blockchain string `yaml:"blockchain"`
@@ -17,6 +22,7 @@ type (
 		Decimals int32  `yaml:"decimals"`
 	}
 	Server struct {
+		Mode           string `yaml:"mode"`
 		Port           string `yaml:"port"`
 		Endpoint       string `yaml:"endpoint"`
 		SecureEndpoint bool   `yaml:"secureEndpoint"`

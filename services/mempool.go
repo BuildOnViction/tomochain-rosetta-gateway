@@ -7,6 +7,7 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
+	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	tomochaincommon "github.com/tomochain/tomochain/common"
 )
@@ -27,6 +28,9 @@ func (m *mempoolAPIService) Mempool(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.MempoolResponse, *types.Error) {
+	if m.client.GetConfig().Server.Mode != config.ServerModeOnline {
+		return nil, common.ErrUnavailableOffline
+	}
 	terr := ValidateNetworkIdentifier(ctx, m.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
@@ -50,6 +54,9 @@ func (m *mempoolAPIService) MempoolTransaction(
 	ctx context.Context,
 	request *types.MempoolTransactionRequest,
 ) (*types.MempoolTransactionResponse, *types.Error) {
+	if m.client.GetConfig().Server.Mode != config.ServerModeOnline {
+		return nil, common.ErrUnavailableOffline
+	}
 	terr := ValidateNetworkIdentifier(ctx, m.client, request.NetworkIdentifier)
 	if terr != nil {
 		return nil, terr
