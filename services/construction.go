@@ -391,14 +391,10 @@ func (s *constructionAPIService) ConstructionPayloads(
 		return nil, common.ErrInvalidInputParam
 	}
 	addr := request.Operations[0].Account.Address
-	account, err := s.client.GetAccount(ctx, addr)
-	if err != nil {
-		fmt.Println("construction/payloads: failed to GetAccount", addr, err)
-		return nil, common.ErrUnableToGetAccount
-	}
-	nonce, ok := account.Metadata[common.METADATA_SEQUENCE_NUMBER]
+
+	nonce, ok := request.Metadata[common.METADATA_NONCE]
 	if !ok || nonce == nil {
-		fmt.Println("construction/payloads: failed to getNextNonce", addr, err)
+		fmt.Println("construction/payloads: failed to getNextNonce from metadata", addr)
 		return nil, common.ErrUnableToGetNextNonce
 	}
 	txValue, _ := new(big.Int).SetString(cast.ToString(request.Operations[1].Amount.Value), 10)
@@ -416,12 +412,9 @@ func (s *constructionAPIService) ConstructionPayloads(
 		txdata)
 	checkFrom := request.Operations[0].Account.Address
 
-	chainId, err := s.client.GetChainID(ctx)
-	if err != nil {
-		fmt.Println("construction/payloads: failed to getChainID", addr, err)
-		return nil, common.ErrUnableToGetChainID
-	}
-
+	// get ChainId from configuration, because ConstructionPayloads is in offline mode
+	id := s.client.GetConfig().NetworkIdentifier.Network
+	chainId := new(big.Int).SetUint64(cast.ToUint64(id))
 	unsignedTx := &transaction{
 		From:     checkFrom,
 		To:       request.Operations[1].Account.Address,
