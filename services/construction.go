@@ -47,10 +47,6 @@ func (s *constructionAPIService) ConstructionCombine(
 	ctx context.Context,
 	request *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
-	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
-		return nil, terr
-	}
-
 	b, err := hex.DecodeString(request.UnsignedTransaction)
 	if err != nil {
 		fmt.Println("construction/combine: unable to decode unsigned transaction", err)
@@ -265,9 +261,6 @@ func (s *constructionAPIService) ConstructionParse(
 	ctx context.Context,
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
-	if terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); terr != nil {
-		return nil, terr
-	}
 	tx := &transaction{}
 
 	if !request.Signed {
@@ -388,9 +381,7 @@ func (s *constructionAPIService) ConstructionPayloads(
 	ctx context.Context,
 	request *types.ConstructionPayloadsRequest,
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
-	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
-		return nil, err
-	}
+	fmt.Println("ConstructionPayloads input", request.Metadata)
 	if len(request.Operations) != 2 {
 		fmt.Println("construction/payloads: ConstructionPayloadsRequest require 2 operations", len(request.Operations))
 		return nil, common.ErrInvalidInputParam
@@ -464,10 +455,6 @@ func (s *constructionAPIService) ConstructionPreprocess(
 	ctx context.Context,
 	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
-	if err := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier); err != nil {
-		return nil, err
-	}
-
 	options := make(map[string]interface{})
 	if len(request.Operations) != 2 {
 		return nil, common.ErrConstructionCheck
