@@ -83,11 +83,6 @@ func (s *networkAPIService) NetworkOptions(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkOptionsResponse, *types.Error) {
-	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
-	if terr != nil {
-		return nil, terr
-	}
-
 	return &types.NetworkOptionsResponse{
 		Version: &types.Version{
 			RosettaVersion: s.client.GetConfig().Server.RosettaVersion,
@@ -110,6 +105,7 @@ func (s *networkAPIService) NetworkOptions(
 			},
 			OperationTypes: common.SupportedOperationTypes(),
 			Errors:         common.ErrorList,
+			HistoricalBalanceLookup : false,
 		},
 	}, nil
 }
