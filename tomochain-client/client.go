@@ -266,7 +266,7 @@ func (c *TomoChainRpcClient) GetAccount(ctx context.Context, owner string) (res 
 		return nil, err
 	}
 	res.Metadata = map[string]interface{}{
-		common.METADATA_SEQUENCE_NUMBER: nonce,
+		common.METADATA_ACCOUNT_SEQUENCE: nonce,
 	}
 	return res, nil
 }

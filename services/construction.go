@@ -385,14 +385,13 @@ func (s *constructionAPIService) ConstructionPayloads(
 	ctx context.Context,
 	request *types.ConstructionPayloadsRequest,
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
-	fmt.Println("ConstructionPayloads input", request.Metadata)
 	if len(request.Operations) != 2 {
 		fmt.Println("construction/payloads: ConstructionPayloadsRequest require 2 operations", len(request.Operations))
 		return nil, common.ErrInvalidInputParam
 	}
 	addr := request.Operations[0].Account.Address
 
-	nonce, ok := request.Metadata[common.METADATA_NONCE]
+	nonce, ok := request.Metadata[common.METADATA_ACCOUNT_SEQUENCE]
 	if !ok || nonce == nil {
 		fmt.Println("construction/payloads: failed to getNextNonce from metadata", addr)
 		return nil, common.ErrUnableToGetNextNonce

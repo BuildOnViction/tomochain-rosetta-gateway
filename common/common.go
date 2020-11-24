@@ -25,7 +25,7 @@ const (
 	FAIL                        = "FAIL"
 	PENDING                     = "PENDING"
 	METADATA_NEW_BALANCE        = "new_balance"
-	METADATA_SEQUENCE_NUMBER    = "sequence_number"
+	METADATA_ACCOUNT_SEQUENCE   = "account_sequence"
 	METADATA_RECENT_BLOCK_HASH  = "recent_block_hash"
 	METADATA_GAS_LIMIT          = "gas_limit"
 	METADATA_GAS_PRICE          = "gas_price"
