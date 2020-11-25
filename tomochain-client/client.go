@@ -303,23 +303,29 @@ func (c *TomoChainRpcClient) PackBlockData(ctx context.Context, block *tomochain
 	if block == nil {
 		return nil, nil
 	}
-	var parent *types.BlockIdentifier
-	if block.Number().Int64() > 0 {
-		parent = &types.BlockIdentifier{
-			Index: block.Number().Int64() - 1,
-			Hash:  block.ParentHash().String(),
-		}
-	}
 	var (
+		parent       *types.BlockIdentifier
 		transactions []*types.Transaction
 		err          error
 	)
 
 	if block.NumberU64() > 0 {
+		parent = &types.BlockIdentifier{
+			Index: block.Number().Int64() - 1,
+			Hash:  block.ParentHash().String(),
+		}
 		transactions, err = c.PackTransaction(ctx, block, finalBlockHash)
 		if err != nil {
 			fmt.Println("PackBlockData error when packing Transaction", err)
 			return nil, err
+		}
+	} else {
+		// genesis block
+		// following https://www.rosetta-api.org/docs/common_mistakes.html#malformed-genesis-block
+		// parentBlock == genesisBlock
+		parent = &types.BlockIdentifier{
+			Index: int64(0),
+			Hash:  finalBlockHash.String(),
 		}
 	}
 
