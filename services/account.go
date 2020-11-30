@@ -40,3 +40,8 @@ func (s *accountAPIService) AccountBalance(
 	}
 	return resp, nil
 }
+
+func (s *accountAPIService) AccountCoins(context.Context, *types.AccountCoinsRequest) (*types.AccountCoinsResponse, *types.Error) {
+	//TODO:
+	return nil, nil
+}

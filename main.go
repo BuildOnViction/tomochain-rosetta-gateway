@@ -31,6 +31,8 @@ func NewBlockchainRouter(client tc.TomoChainClient) (http.Handler, error) {
 				Network:    client.GetConfig().NetworkIdentifier.Network,
 			},
 		},
+		tc.CallMethods,
+		false,
 	)
 	if err != nil {
 		return nil, err

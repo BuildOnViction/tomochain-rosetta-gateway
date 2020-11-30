@@ -29,6 +29,8 @@ const (
 	METADATA_RECENT_BLOCK_HASH  = "recent_block_hash"
 	METADATA_GAS_LIMIT          = "gas_limit"
 	METADATA_GAS_PRICE          = "gas_price"
+	METADATA_RECEIPT            = "receipt"
+	METADATA_TRACE              = "trace"
 	METADATA_RECIPIENT          = "recipient"
 	METADATA_SENDER             = "sender"
 	METADATA_TRANSACTION_TYPE   = "type"
@@ -43,8 +45,14 @@ const (
 	// rpc method name
 	RPC_METHOD_SEND_SIGNED_TRANSACTION  = "eth_sendRawTransaction"
 	RPC_METHOD_GET_PENDING_TRANSACTIONS = "eth_pendingTransactions"
+	RPC_METHOD_GET_TRANSACTION_COUNT    = "eth_getTransactionCount"
+	RPC_METHOD_GAS_PRICE                = "eth_gasPrice"
+	RPC_METHOD_ESTIMATE_GAS             = "eth_estimateGas"
 	RPC_METHOD_GET_BLOCK_BY_NUMBER      = "eth_getBlockByNumber"
 	RPC_METHOD_GET_BLOCK_BY_HASH        = "eth_getBlockByHash"
+	RPC_METHOD_DEBUG_TRACE_BLOCK        = "debug_traceBlockByHash"
+	RPC_METHOD_GET_TRANSACTION_RECEIPT  = "eth_getTransactionReceipt"
+	RPC_METHOD_GET_BALANCE              = "eth_getBalance"
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
 	RPC_METHOD_GET_CHAIN_ID             = "eth_chainId"
 	// transaction type code

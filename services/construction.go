@@ -120,7 +120,9 @@ func (s *constructionAPIService) ConstructionDerive(
 	addr := tc.PubToAddress(pubBytes)
 
 	return &types.ConstructionDeriveResponse{
-		Address: addr.String(),
+		AccountIdentifier: &types.AccountIdentifier{
+			Address: addr.String(),
+		},
 	}, nil
 }
 
@@ -367,14 +369,18 @@ func (s *constructionAPIService) ConstructionParse(
 	if request.Signed {
 		resp = &types.ConstructionParseResponse{
 			Operations: ops,
-			Signers:    []string{tx.From},
-			Metadata:   metaMap,
+			AccountIdentifierSigners: []*types.AccountIdentifier{
+				{
+					Address: tx.From,
+				},
+			},
+			Metadata: metaMap,
 		}
 	} else {
 		resp = &types.ConstructionParseResponse{
-			Operations: ops,
-			Signers:    []string{},
-			Metadata:   metaMap,
+			Operations:               ops,
+			AccountIdentifierSigners: []*types.AccountIdentifier{},
+			Metadata:                 metaMap,
 		}
 	}
 	return resp, nil
@@ -438,7 +444,9 @@ func (s *constructionAPIService) ConstructionPayloads(
 		UnsignedTransaction: unsignedTxEncode,
 		Payloads: []*types.SigningPayload{
 			{
-				Address:       checkFrom,
+				AccountIdentifier: &types.AccountIdentifier{
+					Address: checkFrom,
+				},
 				Bytes:         signer.Hash(tx).Bytes(),
 				SignatureType: types.EcdsaRecovery,
 			},
