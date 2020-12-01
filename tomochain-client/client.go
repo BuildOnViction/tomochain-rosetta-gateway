@@ -370,6 +370,9 @@ func (tc *TomoChainRpcClient) GetGenesisBlock(ctx context.Context) (*RosettaType
 }
 
 func (tc *TomoChainRpcClient) GetBlockByNumber(ctx context.Context, number *big.Int) (*RosettaTypes.Block, error) {
+	if number == nil {
+		return tc.GetLatestBlock(ctx)
+	}
 	index := number.Int64()
 	return tc.Block(ctx, &RosettaTypes.PartialBlockIdentifier{
 		Index: &index,
