@@ -47,6 +47,7 @@ const (
 	RPC_METHOD_GET_BLOCK_BY_NUMBER      = "eth_getBlockByNumber"
 	RPC_METHOD_GET_BLOCK_BY_HASH        = "eth_getBlockByHash"
 	RPC_METHOD_DEBUG_TRACE_BLOCK        = "debug_traceBlockByHash"
+	RPC_METHOD_DEBUG_TRACE_TRANSACTION  = "debug_traceTransaction"
 	RPC_METHOD_GET_TRANSACTION_RECEIPT  = "eth_getTransactionReceipt"
 	RPC_METHOD_GET_BALANCE              = "eth_getBalance"
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"

@@ -278,15 +278,13 @@ func (tc *TomoChainRpcClient) getBlock(
 	// We fetch traces last because we want to avoid limiting the number of other
 	// block-related data fetches we perform concurrently (we limit the number of
 	// concurrent traces that are computed to 16 to avoid overwhelming geth).
-	var traces []*rpcCall
-	var rawTraces []*rpcRawCall
 	var addTraces bool
 	if head.Number.Int64() != GenesisBlockIndex { // not possible to get traces at genesis
 		addTraces = true
-		traces, rawTraces, err = tc.getBlockTraces(ctx, body.Hash)
-		if err != nil {
-			return nil, nil, fmt.Errorf("%w: could not get traces for %x", err, body.Hash[:])
-		}
+		//traces, rawTraces, err = tc.getBlockTraces(ctx, body.Hash)
+		//if err != nil {
+		//	return nil, nil, fmt.Errorf("%w: could not get traces for %x", err, body.Hash[:])
+		//}
 	}
 
 	// Convert all txs to loaded txs
@@ -308,9 +306,12 @@ func (tc *TomoChainRpcClient) getBlock(
 		if !addTraces {
 			continue
 		}
-
-		loadedTxs[i].Trace = traces[i].Result
-		loadedTxs[i].RawTrace = rawTraces[i].Result
+		trace, rawTrace, err := tc.getTransactionTraces(ctx, tx.tx.Hash())
+		if err != nil {
+			return nil, nil, fmt.Errorf("%w: could not get transaction traces for %s", err, tx.tx.Hash().String())
+		}
+		loadedTxs[i].Trace = trace
+		loadedTxs[i].RawTrace = rawTrace
 	}
 
 	return tomochaintypes.NewBlockWithHeader(&head).WithBody(txs, uncles), loadedTxs, nil
@@ -339,6 +340,36 @@ func (tc *TomoChainRpcClient) getBlockTraces(
 	}
 
 	// Decode []*rpcRawCall
+	if err := json.Unmarshal(raw, &rawCalls); err != nil {
+		return nil, nil, err
+	}
+
+	return calls, rawCalls, nil
+}
+
+func (tc *TomoChainRpcClient) getTransactionTraces(
+	ctx context.Context,
+	txHash tomochaincommon.Hash,
+) (*Call, json.RawMessage, error) {
+	if err := tc.traceSemaphore.Acquire(ctx, semaphoreTraceWeight); err != nil {
+		return nil, nil, err
+	}
+	defer tc.traceSemaphore.Release(semaphoreTraceWeight)
+
+	var calls *Call
+	var rawCalls json.RawMessage
+	var raw json.RawMessage
+	err := tc.c.CallContext(ctx, &raw, common.RPC_METHOD_DEBUG_TRACE_TRANSACTION, txHash, tc.tracerConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Decode *Call
+	if err := json.Unmarshal(raw, &calls); err != nil {
+		return nil, nil, err
+	}
+
+	// Decode json.RawMessage
 	if err := json.Unmarshal(raw, &rawCalls); err != nil {
 		return nil, nil, err
 	}

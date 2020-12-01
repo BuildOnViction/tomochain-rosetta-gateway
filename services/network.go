@@ -58,6 +58,7 @@ func (s *networkAPIService) NetworkStatus(
 	}
 	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
+		fmt.Println(terr)
 		return nil, terr
 	}
 
