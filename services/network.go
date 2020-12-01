@@ -4,6 +4,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
@@ -62,10 +63,12 @@ func (s *networkAPIService) NetworkStatus(
 
 	blk, err := s.client.GetBlockByNumber(ctx, nil) // nil means: get latest block
 	if err != nil {
+		fmt.Println(err)
 		return nil, common.ErrUnableToGetNodeStatus
 	}
 	genesisblk, err := s.client.GetGenesisBlock(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, common.ErrUnableToGetNodeStatus
 	}
 
@@ -99,9 +102,9 @@ func (s *networkAPIService) NetworkOptions(
 					Successful: false,
 				},
 			},
-			OperationTypes: common.SupportedOperationTypes(),
-			Errors:         common.ErrorList,
-			HistoricalBalanceLookup : false,
+			OperationTypes:          common.SupportedOperationTypes(),
+			Errors:                  common.ErrorList,
+			HistoricalBalanceLookup: false,
 		},
 	}, nil
 }
