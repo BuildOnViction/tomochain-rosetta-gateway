@@ -745,12 +745,14 @@ func (tc *TomoChainRpcClient) populateTransactions(
 		}
 	}
 
+	index := uint64(0)
 	if rewardTx != nil {
 		transactions = make(
 			[]*RosettaTypes.Transaction,
 			len(block.Transactions())+1,
 		)
 		transactions[0] = rewardTx
+		index++
 	} else {
 		transactions = make(
 			[]*RosettaTypes.Transaction,
@@ -758,7 +760,7 @@ func (tc *TomoChainRpcClient) populateTransactions(
 		)
 	}
 
-	for i, tx := range loadedTransactions {
+	for _, tx := range loadedTransactions {
 		transaction, err := tc.populateTransaction(
 			tx,
 		)
@@ -766,7 +768,8 @@ func (tc *TomoChainRpcClient) populateTransactions(
 			return nil, fmt.Errorf("%w: cannot parse %s", err, tx.Transaction.Hash().Hex())
 		}
 
-		transactions[i+1] = transaction
+		transactions[index] = transaction
+		index++
 	}
 
 	return transactions, nil
