@@ -4,15 +4,14 @@ package tomochain_client
 
 import (
 	"fmt"
-	"io/ioutil"
-
 	"github.com/tomochain/tomochain/eth"
+	"io/ioutil"
 )
 
 // convert raw eth data from client to rosetta
 
 const (
-	tracerPath = "tomochain_client/call_tracer.js"
+	tracerPath = "tomochain-client/call_tracer.js"
 )
 
 var (
