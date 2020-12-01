@@ -11,7 +11,7 @@ import (
 type TransactionType uint64
 
 const (
-	// tomochain network information
+	// TomoChain network information
 	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
 	TomoChainTestnetNetWorkId = 89
@@ -51,8 +51,6 @@ const (
 	RPC_METHOD_GET_BALANCE              = "eth_getBalance"
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
 	RPC_METHOD_GET_CHAIN_ID             = "eth_chainId"
-
-
 
 	// MinerRewardOpType is used to describe
 	// a miner block reward.
@@ -109,7 +107,6 @@ var (
 		DestructOpType,
 	}
 )
-
 
 type RPCTransaction struct {
 	BlockHash        common.Hash     `json:"blockHash"`

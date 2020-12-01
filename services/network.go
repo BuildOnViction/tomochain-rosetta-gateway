@@ -13,10 +13,6 @@ import (
 	"strconv"
 )
 
-const (
-	latestVersion = "v1.1.0"
-)
-
 type networkAPIService struct {
 	client tc.TomoChainClient
 }
