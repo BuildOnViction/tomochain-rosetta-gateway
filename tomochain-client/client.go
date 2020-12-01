@@ -242,35 +242,51 @@ func (tc *TomoChainRpcClient) getBlock(
 ) (
 	*tomochaintypes.Block,
 	[]*loadedTransaction,
+	string,
 	error,
 ) {
 	var raw json.RawMessage
 	err := tc.c.CallContext(ctx, &raw, blockMethod, args...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: block fetch failed", err)
+		return nil, nil, "", fmt.Errorf("%w: block fetch failed", err)
 	} else if len(raw) == 0 {
-		return nil, nil, tomochain.NotFound
+		return nil, nil, "", tomochain.NotFound
+	}
+
+	var data map[string]interface{}
+	if err = json.Unmarshal(raw, &data); err != nil {
+		fmt.Println("getBlockByNumber error when unmarshalling raw data")
+		return nil, []*loadedTransaction{}, "", err
+	}
+	// include M2 signature
+	//FIXME: TomoChain Blockchain includes double validation mechanism
+	// so block.Hash() won't response the correct blockhash
+	// remember to get 'hash' field from response data
+	
+	finalBlockHash := ""
+	if data["hash"] != nil {
+		finalBlockHash = (data["hash"]).(string)
 	}
 
 	// Decode header and transactions
 	var head tomochaintypes.Header
 	var body rpcBlock
 	if err := json.Unmarshal(raw, &head); err != nil {
-		return nil, nil, err
+		return nil, nil, "",  err
 	}
 	if err := json.Unmarshal(raw, &body); err != nil {
-		return nil, nil, err
+		return nil, nil, "",  err
 	}
 
 	uncles, err := tc.getUncles(ctx, &head, &body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: unable to get uncles", err)
+		return nil, nil, "",  fmt.Errorf("%w: unable to get uncles", err)
 	}
 
 	// Get all transaction receipts
 	receipts, err := tc.getBlockReceipts(ctx, body.Hash, body.Transactions)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: could not get receipts for %x", err, body.Hash[:])
+		return nil, nil,  "", fmt.Errorf("%w: could not get receipts for %x", err, body.Hash[:])
 	}
 
 	// Get block traces (not possible to make idempotent block transaction trace requests)
@@ -308,13 +324,13 @@ func (tc *TomoChainRpcClient) getBlock(
 		}
 		trace, rawTrace, err := tc.getTransactionTraces(ctx, tx.tx.Hash())
 		if err != nil {
-			return nil, nil, fmt.Errorf("%w: could not get transaction traces for %s", err, tx.tx.Hash().String())
+			return nil, nil,  "", fmt.Errorf("%w: could not get transaction traces for %s", err, tx.tx.Hash().String())
 		}
 		loadedTxs[i].Trace = trace
 		loadedTxs[i].RawTrace = rawTrace
 	}
 
-	return tomochaintypes.NewBlockWithHeader(&head).WithBody(txs, uncles), loadedTxs, nil
+	return tomochaintypes.NewBlockWithHeader(&head).WithBody(txs, uncles), loadedTxs, finalBlockHash, nil
 }
 
 func (tc *TomoChainRpcClient) getBlockTraces(
@@ -691,13 +707,13 @@ func (tc *TomoChainRpcClient) getParsedBlock(
 	*RosettaTypes.Block,
 	error,
 ) {
-	block, loadedTransactions, err := tc.getBlock(ctx, blockMethod, args...)
+	block, loadedTransactions, finalBlockHash, err := tc.getBlock(ctx, blockMethod, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: could not get block", err)
 	}
 
 	blockIdentifier := &RosettaTypes.BlockIdentifier{
-		Hash:  block.Hash().String(),
+		Hash:  finalBlockHash,
 		Index: block.Number().Int64(),
 	}
 
@@ -706,6 +722,14 @@ func (tc *TomoChainRpcClient) getParsedBlock(
 		parentBlockIdentifier = &RosettaTypes.BlockIdentifier{
 			Hash:  block.ParentHash().Hex(),
 			Index: blockIdentifier.Index - 1,
+		}
+	} else {
+		// genesis block
+		// following https://www.rosetta-api.org/docs/common_mistakes.html#malformed-genesis-block
+		// parentBlock == genesisBlock
+		parentBlockIdentifier = &RosettaTypes.BlockIdentifier{
+			Index: GenesisBlockIndex,
+			Hash:  finalBlockHash,
 		}
 	}
 
