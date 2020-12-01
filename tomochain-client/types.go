@@ -9,46 +9,7 @@ import (
 	"math/big"
 )
 
-const (
 
-	// MinerRewardOpType is used to describe
-	// a miner block reward.
-	MinerRewardOpType = "MINER_REWARD"
-
-	// UncleRewardOpType is used to describe
-	// an uncle block reward.
-	UncleRewardOpType = "UNCLE_REWARD"
-
-	// FeeOpType is used to represent fee operations.
-	FeeOpType = "FEE"
-
-	// CallOpType is used to represent CALL trace operations.
-	CallOpType = "CALL"
-
-	// CreateOpType is used to represent CREATE trace operations.
-	CreateOpType = "CREATE"
-
-	// Create2OpType is used to represent CREATE2 trace operations.
-	Create2OpType = "CREATE2"
-
-	// SelfDestructOpType is used to represent SELFDESTRUCT trace operations.
-	SelfDestructOpType = "SELFDESTRUCT"
-
-	// CallCodeOpType is used to represent CALLCODE trace operations.
-	CallCodeOpType = "CALLCODE"
-
-	// DelegateCallOpType is used to represent DELEGATECALL trace operations.
-	DelegateCallOpType = "DELEGATECALL"
-
-	// StaticCallOpType is used to represent STATICCALL trace operations.
-	StaticCallOpType = "STATICCALL"
-
-	// DestructOpType is a synthetic operation used to represent the
-	// deletion of suicided accounts that still have funds at the end
-	// of a transaction.
-	DestructOpType = "DESTRUCT"
-
-)
 var CallMethods = []string{
 	common.RPC_METHOD_GET_TRANSACTION_RECEIPT,
 }
@@ -212,10 +173,10 @@ type GetTransactionReceiptInput struct {
 // if the provided trace type is a call type.
 func CallType(t string) bool {
 	callTypes := []string{
-		CallOpType,
-		CallCodeOpType,
-		DelegateCallOpType,
-		StaticCallOpType,
+		common.CallOpType,
+		common.CallCodeOpType,
+		common.DelegateCallOpType,
+		common.StaticCallOpType,
 	}
 
 	for _, callType := range callTypes {
@@ -231,8 +192,8 @@ func CallType(t string) bool {
 // if the provided trace type is a create type.
 func CreateType(t string) bool {
 	createTypes := []string{
-		CreateOpType,
-		Create2OpType,
+		common.CreateOpType,
+		common.Create2OpType,
 	}
 
 	for _, createType := range createTypes {

@@ -327,7 +327,7 @@ func (s *constructionAPIService) ConstructionParse(
 
 	ops := []*types.Operation{
 		{
-			Type: common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			Type: common.CallOpType,
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: 0,
 			},
@@ -340,7 +340,7 @@ func (s *constructionAPIService) ConstructionParse(
 			},
 		},
 		{
-			Type: common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			Type: common.CallOpType,
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: 1,
 			},
