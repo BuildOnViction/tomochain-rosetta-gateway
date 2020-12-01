@@ -504,7 +504,7 @@ func traceOps(calls []*flatCall, startIndex int) []*RosettaTypes.Operation { // 
 
 		// Add to destroyed accounts if SELFDESTRUCT
 		// and overwrite existing balance.
-		if trace.Type == SelfDestructOpType {
+		if trace.Type == common.SelfDestructOpType {
 			destroyedAccounts[from] = new(big.Int)
 
 			// If destination of of SELFDESTRUCT is self,
@@ -563,7 +563,6 @@ func traceOps(calls []*flatCall, startIndex int) []*RosettaTypes.Operation { // 
 			ops = append(ops, toOp)
 		}
 	}
-	success := common.SUCCESS
 	// Zero-out all destroyed accounts that are removed
 	// during transaction finalization.
 	for acct, val := range destroyedAccounts {
@@ -579,8 +578,8 @@ func traceOps(calls []*flatCall, startIndex int) []*RosettaTypes.Operation { // 
 			OperationIdentifier: &RosettaTypes.OperationIdentifier{
 				Index: ops[len(ops)-1].OperationIdentifier.Index + 1,
 			},
-			Type:   DestructOpType,
-			Status: &success,
+			Type:   common.DestructOpType,
+			Status: &common.SUCCESS,
 			Account: &RosettaTypes.AccountIdentifier{
 				Address: acct,
 			},
@@ -595,14 +594,13 @@ func traceOps(calls []*flatCall, startIndex int) []*RosettaTypes.Operation { // 
 }
 
 func feeOps(tx *loadedTransaction) []*RosettaTypes.Operation {
-	success := common.SUCCESS
 	return []*RosettaTypes.Operation{
 		{
 			OperationIdentifier: &RosettaTypes.OperationIdentifier{
 				Index: 0,
 			},
-			Type:   FeeOpType,
-			Status: &success,
+			Type:   common.FeeOpType,
+			Status: &common.SUCCESS,
 			Account: &RosettaTypes.AccountIdentifier{
 				Address: MustChecksum(tx.From.String()),
 			},
@@ -621,8 +619,8 @@ func feeOps(tx *loadedTransaction) []*RosettaTypes.Operation {
 					Index: 0,
 				},
 			},
-			Type:   FeeOpType,
-			Status: &success,
+			Type:   common.FeeOpType,
+			Status: &common.SUCCESS,
 			Account: &RosettaTypes.AccountIdentifier{
 				Address: MustChecksum(tx.Miner),
 			},
@@ -700,20 +698,30 @@ func (tc *TomoChainRpcClient) populateTransactions(
 	block *tomochaintypes.Block,
 	loadedTransactions []*loadedTransaction,
 ) ([]*RosettaTypes.Transaction, error) {
-	transactions := make(
-		[]*RosettaTypes.Transaction,
-		len(block.Transactions())+1, // include reward tx
+	var (
+		transactions    []*RosettaTypes.Transaction
+		rewardTx *RosettaTypes.Transaction
+		err error
 	)
-
 	// Compute reward transaction (block + uncle reward)
-	if block.NumberU64()%common.Epoch == 0 {
-		rewards, err := tc.GetBlockReward(ctx, tomochaincommon.HexToHash(blockIdentifier.Hash))
+	if block.NumberU64()%common.Epoch == 0 && block.NumberU64() > 0 {
+		rewardTx, err = tc.populateRewardTransaction(ctx, blockIdentifier)
 		if err != nil {
-			return []*RosettaTypes.Transaction{}, err
+			return []*RosettaTypes.Transaction{}, nil
 		}
-		if rewards != nil {
-			//TODO: reward transaction
-		}
+	}
+
+	if rewardTx != nil {
+		transactions = make(
+			[]*RosettaTypes.Transaction,
+			len(block.Transactions())+1,
+		)
+		transactions[0] = rewardTx
+	} else {
+		transactions = make(
+			[]*RosettaTypes.Transaction,
+			len(block.Transactions()),
+		)
 	}
 
 	for i, tx := range loadedTransactions {
@@ -728,6 +736,45 @@ func (tc *TomoChainRpcClient) populateTransactions(
 	}
 
 	return transactions, nil
+}
+
+func (tc *TomoChainRpcClient) populateRewardTransaction(
+	ctx context.Context,
+	blockIdentifier *RosettaTypes.BlockIdentifier,
+) (*RosettaTypes.Transaction, error) {
+
+	rewards, err := tc.GetBlockReward(ctx, tomochaincommon.HexToHash(blockIdentifier.Hash))
+	if err != nil {
+		return nil, err
+	}
+	rewardOperations := []*RosettaTypes.Operation{}
+	if rewards != nil {
+		for _, signer := range rewards {
+			for holder, amount := range signer {
+				rewardOperations = append(rewardOperations, &RosettaTypes.Operation{
+					OperationIdentifier: &RosettaTypes.OperationIdentifier{
+						Index: int64(len(rewardOperations)),
+					},
+					RelatedOperations: nil,
+					Type:              common.MinerRewardOpType,
+					Status:            &common.SUCCESS,
+					Account: &RosettaTypes.AccountIdentifier{
+						Address: holder,
+					},
+					Amount: &RosettaTypes.Amount{
+						Value:    amount.String(),
+						Currency: common.TomoNativeCoin,
+					},
+				})
+			}
+		}
+
+	}
+	return &RosettaTypes.Transaction{
+		TransactionIdentifier: &RosettaTypes.TransactionIdentifier{Hash: blockIdentifier.Hash},
+		Operations:            rewardOperations,
+	}, nil
+
 }
 
 func (tc *TomoChainRpcClient) populateTransaction(
