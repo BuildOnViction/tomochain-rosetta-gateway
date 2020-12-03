@@ -41,7 +41,8 @@ func (s *accountAPIService) AccountBalance(
 	return resp, nil
 }
 
+// AccountCoins implements /account/coins.
 func (s *accountAPIService) AccountCoins(context.Context, *types.AccountCoinsRequest) (*types.AccountCoinsResponse, *types.Error) {
-	//TODO:
-	return nil, nil
+	// TomoChain blockchain doesn't support coin identifier
+	return nil, common.ErrNotImplemented
 }
