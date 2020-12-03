@@ -104,7 +104,7 @@ func NewTomoChainClient(cfg *config.Config) (cli *TomoChainRpcClient, err error)
 // This is the nonce that should be used for the next transaction.
 func (tc *TomoChainRpcClient) NonceAt(ctx context.Context, account tomochaincommon.Address) (uint64, error) {
 	var result hexutil.Uint64
-	err := tc.c.CallContext(ctx, &result, common.RPC_METHOD_GET_TRANSACTION_COUNT, account)
+	err := tc.c.CallContext(ctx, &result, common.RPC_METHOD_GET_TRANSACTION_COUNT, account, toBlockNumArg(nil))
 	return uint64(result), err
 }
 
@@ -904,8 +904,7 @@ func (tc *TomoChainRpcClient) GetAccount(ctx context.Context, owner string) (res
 	res.BlockIdentifier = block.BlockIdentifier
 
 	var result hexutil.Big
-
-	err = tc.c.CallContext(ctx, &result, common.RPC_METHOD_GET_BALANCE, tomochaincommon.HexToAddress(owner), nil)
+	err = tc.c.CallContext(ctx, &result, common.RPC_METHOD_GET_BALANCE, tomochaincommon.HexToAddress(owner), toBlockNumArg(nil))
 	if err != nil {
 		return nil, err
 	}
