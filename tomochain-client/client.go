@@ -289,6 +289,8 @@ func (tc *TomoChainRpcClient) getBlock(
 		return nil, nil,  "", fmt.Errorf("%w: could not get receipts for %x", err, body.Hash[:])
 	}
 
+	miner := tomochaincommon.Address{}
+
 	// Get block traces (not possible to make idempotent block transaction trace requests)
 	//
 	// We fetch traces last because we want to avoid limiting the number of other
@@ -297,10 +299,11 @@ func (tc *TomoChainRpcClient) getBlock(
 	var addTraces bool
 	if head.Number.Int64() != GenesisBlockIndex { // not possible to get traces at genesis
 		addTraces = true
-		//traces, rawTraces, err = tc.getBlockTraces(ctx, body.Hash)
-		//if err != nil {
-		//	return nil, nil, fmt.Errorf("%w: could not get traces for %x", err, body.Hash[:])
-		//}
+		miner, err = GetCoinbaseFromHeader(&head)
+		if err != nil {
+			fmt.Println("Failed to get miner of block", head.Number, finalBlockHash)
+			return nil, nil, "",  err
+		}
 	}
 
 	// Convert all txs to loaded txs
@@ -315,7 +318,7 @@ func (tc *TomoChainRpcClient) getBlock(
 		loadedTxs[i] = tx.LoadedTransaction()
 		loadedTxs[i].Transaction = txs[i]
 		loadedTxs[i].FeeAmount = feeAmount
-		loadedTxs[i].Miner = MustChecksum(head.Coinbase.Hex())
+		loadedTxs[i].Miner = MustChecksum(miner.Hex())
 		loadedTxs[i].Receipt = receipt
 
 		// Continue if calls does not exist (occurs at genesis)
@@ -803,7 +806,6 @@ func (tc *TomoChainRpcClient) populateRewardTransaction(
 	ctx context.Context,
 	blockIdentifier *RosettaTypes.BlockIdentifier,
 ) (*RosettaTypes.Transaction, error) {
-
 	rewards, err := tc.GetBlockReward(ctx, tomochaincommon.HexToHash(blockIdentifier.Hash))
 	if err != nil {
 		return nil, err
