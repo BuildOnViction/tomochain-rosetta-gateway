@@ -64,7 +64,7 @@ type (
 
 		SuggestGasPrice(ctx context.Context) (uint64, error)
 
-		EstimateGas(ctx context.Context, msg tomochain.CallMsg) (uint64, error)
+		EstimateGas(ctx context.Context, msg common.CallArgs) (uint64, error)
 	}
 )
 
@@ -888,7 +888,7 @@ func (tc *TomoChainRpcClient) populateTransaction(
 	return populatedTransaction, nil
 }
 
-func (tc *TomoChainRpcClient) EstimateGas(ctx context.Context, msg tomochain.CallMsg) (uint64, error) {
+func (tc *TomoChainRpcClient) EstimateGas(ctx context.Context, msg common.CallArgs) (uint64, error) {
 	var result hexutil.Uint64
 	err := tc.c.CallContext(ctx, &result, common.RPC_METHOD_ESTIMATE_GAS, msg)
 	return uint64(result), err
