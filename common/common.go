@@ -20,6 +20,10 @@ const (
 	Epoch                     = 900
 	DefaultGasLimit           = 10000000
 
+	// HistoricalBalanceSupported is whether
+	// historical balance is supported.
+	HistoricalBalanceSupported = true
+
 	// text
 	METADATA_ACCOUNT_SEQUENCE   = "account_sequence"
 	METADATA_RECENT_BLOCK_HASH  = "recent_block_hash"

@@ -24,7 +24,7 @@ const (
 // Rosetta service controllers.
 func NewBlockchainRouter(client tc.TomoChainClient) (http.Handler, error) {
 	asserter, err := asserter.NewServer(common.SupportedOperationTypes(),
-		false,
+		common.HistoricalBalanceSupported,
 		[]*types.NetworkIdentifier{
 			{
 				Blockchain: client.GetConfig().NetworkIdentifier.Blockchain,

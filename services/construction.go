@@ -231,7 +231,7 @@ func (s *constructionAPIService) ConstructionMetadata(
 		fmt.Println("construction/metadata: failed to estimate gas", err)
 		return nil, common.ErrUnableToEstimateGas
 	}
-	account, err := s.client.GetAccount(ctx, callMsg.From.String())
+	account, err := s.client.GetAccount(ctx, callMsg.From.String(), nil)
 	if err != nil {
 		fmt.Println("construction/metadata: failed to getAccount", callMsg.From.String(), err)
 		return nil, common.ErrUnableToGetAccount

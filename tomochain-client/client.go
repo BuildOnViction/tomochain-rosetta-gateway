@@ -51,7 +51,7 @@ type (
 
 		// GetAccount returns the TomoChain staking account for given owner address
 		// at given height.
-		GetAccount(ctx context.Context, owner string) (*RosettaTypes.AccountBalanceResponse, error)
+		GetAccount(ctx context.Context, owner string, blockIdentifier *RosettaTypes.PartialBlockIdentifier) (*RosettaTypes.AccountBalanceResponse, error)
 
 		// SubmitTx submits the given encoded transaction to the node.
 		SubmitTx(ctx context.Context, signedTx hexutil.Bytes) (txid string, err error)
@@ -895,8 +895,8 @@ func (tc *TomoChainRpcClient) EstimateGas(ctx context.Context, msg common.CallAr
 }
 
 // GetAccount response summary information of TomoChain address including balance, nonce
-func (tc *TomoChainRpcClient) GetAccount(ctx context.Context, owner string) (res *RosettaTypes.AccountBalanceResponse, err error) {
-	block, err := tc.Block(ctx, nil)
+func (tc *TomoChainRpcClient) GetAccount(ctx context.Context, owner string, blockIdentifier *RosettaTypes.PartialBlockIdentifier) (res *RosettaTypes.AccountBalanceResponse, err error) {
+	block, err := tc.Block(ctx, blockIdentifier)
 	if err != nil {
 		return nil, err
 	}

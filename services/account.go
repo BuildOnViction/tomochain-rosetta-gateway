@@ -34,7 +34,7 @@ func (s *accountAPIService) AccountBalance(
 	if terr != nil {
 		return nil, terr
 	}
-	resp, err := s.client.GetAccount(ctx, request.AccountIdentifier.Address)
+	resp, err := s.client.GetAccount(ctx, request.AccountIdentifier.Address, request.BlockIdentifier)
 	if err != nil {
 		return nil, common.ErrUnableToGetAccount
 	}
