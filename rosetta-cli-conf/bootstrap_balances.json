@@ -1,103 +1,101 @@
-[
- {
-  "account_identifier": {
-   "address": "0x0000000000000000000000000000000000000068"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "16000000000000000000000000"
- },
-  {
-  "account_identifier": {
-   "address": "0x0000000000000000000000000000000000000088"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "150000000000000000000000"
- },
-  {
-  "account_identifier": {
-   "address": "0x0000000000000000000000000000000000000090"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "11850000000000000000000000"
- },
-  {
-  "account_identifier": {
-   "address": "0x059f8114d61aeb2043fa59d39e3872792f653360"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- },
-   {
-  "account_identifier": {
-   "address": "0x0d3ab14bbad3d99f4203bd7a11acb94882050e7e"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- },
-   {
-  "account_identifier": {
-   "address": "0x17f2bed710ba50ed27aea52fc4bd7bda5ed4a037"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- },
-   {
-  "account_identifier": {
-   "address": "0x703c4b2bd70c169f5717101caee543299fc946c7"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- },
+[{
+        "account_identifier": {
+            "address": "0x0000000000000000000000000000000000000068"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "16000000000000000000000000"
+    },
     {
-  "account_identifier": {
-   "address": "0xa8d38fb29cda4ca011b430a680886fb4ca7f3043"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- },
+        "account_identifier": {
+            "address": "0x0000000000000000000000000000000000000088"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "150000000000000000000000"
+    },
     {
-  "account_identifier": {
-   "address": "0xb68d825655f2fe14c32558cdf950b45bef18d218"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- },
+        "account_identifier": {
+            "address": "0x0000000000000000000000000000000000000090"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "11850000000000000000000000"
+    },
     {
-  "account_identifier": {
-   "address": "0xb7e038b0229a97c9cb7ad798aa51757e1017a7d4"
-  },
-  "currency": {
-   "symbol": "TOMO",
-   "decimals": 18
-  },
-  "value": "55000000000000000000000000"
- }
+        "account_identifier": {
+            "address": "0x059F8114D61AEb2043FA59D39e3872792F653360"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0x0D3ab14BBaD3D99F4203bd7a11aCB94882050E7e"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0x17F2beD710ba50Ed27aEa52fc4bD7Bda5ED4a037"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0x703c4b2bD70c169f5717101CaeE543299Fc946C7"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0xa8D38FB29CDA4Ca011b430a680886fB4CA7F3043"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0xb68D825655F2fE14C32558cDf950b45beF18D218"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0xB7e038b0229A97c9CB7AD798aA51757E1017A7D4"
+        },
+        "currency": {
+            "symbol": "TOMO",
+            "decimals": 18
+        },
+        "value": "55000000000000000000000000"
+    }
 ]
-
