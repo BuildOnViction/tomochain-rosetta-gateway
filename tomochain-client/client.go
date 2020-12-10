@@ -318,7 +318,21 @@ func (tc *TomoChainRpcClient) getBlock(
 		loadedTxs[i] = tx.LoadedTransaction()
 		loadedTxs[i].Transaction = txs[i]
 		loadedTxs[i].FeeAmount = feeAmount
-		loadedTxs[i].Miner = MustChecksum(miner.Hex())
+
+		// tx fee send to masternode owner since hardford common/common.go:22
+		if head.Number.Cmp(new(big.Int).SetUint64(common.HardForkUpdateTxFee)) < 0 {
+			loadedTxs[i].Miner = MustChecksum(miner.Hex())
+		} else {
+			var owner string
+			err := tc.c.CallContext(ctx, &owner, common.RPC_METHOD_GET_OWNER_BY_COINBASE, miner, toBlockNumArg(head.Number))
+			if err != nil {
+				fmt.Println("Failed to get masternode owner of coinbase", head.Number, miner)
+				return nil, nil, "",  err
+			}
+			loadedTxs[i].Miner = MustChecksum(owner)
+		}
+
+
 		loadedTxs[i].Receipt = receipt
 
 		// Continue if calls does not exist (occurs at genesis)
@@ -822,7 +836,7 @@ func (tc *TomoChainRpcClient) populateRewardTransaction(
 					Type:              common.MinerRewardOpType,
 					Status:            &common.SUCCESS,
 					Account: &RosettaTypes.AccountIdentifier{
-						Address: holder,
+						Address: MustChecksum(holder),
 					},
 					Amount: &RosettaTypes.Amount{
 						Value:    amount.String(),
