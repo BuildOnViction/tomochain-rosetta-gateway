@@ -11,7 +11,7 @@ import (
 type TransactionType uint64
 
 const (
-	// tomochain network information
+	// TomoChain network information
 	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
 	TomoChainTestnetNetWorkId = 89
@@ -20,15 +20,17 @@ const (
 	Epoch                     = 900
 	DefaultGasLimit           = 10000000
 
+	// HistoricalBalanceSupported is whether
+	// historical balance is supported.
+	HistoricalBalanceSupported = true
+
 	// text
-	SUCCESS                     = "SUCCESS"
-	FAIL                        = "FAIL"
-	PENDING                     = "PENDING"
-	METADATA_NEW_BALANCE        = "new_balance"
 	METADATA_ACCOUNT_SEQUENCE   = "account_sequence"
 	METADATA_RECENT_BLOCK_HASH  = "recent_block_hash"
 	METADATA_GAS_LIMIT          = "gas_limit"
 	METADATA_GAS_PRICE          = "gas_price"
+	METADATA_RECEIPT            = "receipt"
+	METADATA_TRACE              = "trace"
 	METADATA_RECIPIENT          = "recipient"
 	METADATA_SENDER             = "sender"
 	METADATA_TRANSACTION_TYPE   = "type"
@@ -43,30 +45,71 @@ const (
 	// rpc method name
 	RPC_METHOD_SEND_SIGNED_TRANSACTION  = "eth_sendRawTransaction"
 	RPC_METHOD_GET_PENDING_TRANSACTIONS = "eth_pendingTransactions"
+	RPC_METHOD_GET_TRANSACTION_COUNT    = "eth_getTransactionCount"
+	RPC_METHOD_GAS_PRICE                = "eth_gasPrice"
+	RPC_METHOD_ESTIMATE_GAS             = "eth_estimateGas"
 	RPC_METHOD_GET_BLOCK_BY_NUMBER      = "eth_getBlockByNumber"
 	RPC_METHOD_GET_BLOCK_BY_HASH        = "eth_getBlockByHash"
+	RPC_METHOD_DEBUG_TRACE_BLOCK        = "debug_traceBlockByHash"
+	RPC_METHOD_DEBUG_TRACE_TRANSACTION  = "debug_traceTransaction"
+	RPC_METHOD_GET_TRANSACTION_RECEIPT  = "eth_getTransactionReceipt"
+	RPC_METHOD_GET_BALANCE              = "eth_getBalance"
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
 	RPC_METHOD_GET_CHAIN_ID             = "eth_chainId"
-	// transaction type code
-	TRANSACTION_TYPE_NATIVE_TRANSFER           TransactionType = 0
-	TRANSACTION_TYPE_IN_CONTRACT_TRANSFER      TransactionType = 1
-	TRANSACTION_TYPE_GAS_FEE                   TransactionType = 2
-	TRANSACTION_TYPE_CLAIM_FROM_REWARDING_FUND TransactionType = 3
+
+	// MinerRewardOpType is used to describe
+	// a miner block reward.
+	MinerRewardOpType = "MINER_REWARD"
+
+	// FeeOpType is used to represent fee operations.
+	FeeOpType = "FEE"
+
+	// CallOpType is used to represent CALL trace operations.
+	CallOpType = "CALL"
+
+	// CreateOpType is used to represent CREATE trace operations.
+	CreateOpType = "CREATE"
+
+	// Create2OpType is used to represent CREATE2 trace operations.
+	Create2OpType = "CREATE2"
+
+	// SelfDestructOpType is used to represent SELFDESTRUCT trace operations.
+	SelfDestructOpType = "SELFDESTRUCT"
+
+	// CallCodeOpType is used to represent CALLCODE trace operations.
+	CallCodeOpType = "CALLCODE"
+
+	// DelegateCallOpType is used to represent DELEGATECALL trace operations.
+	DelegateCallOpType = "DELEGATECALL"
+
+	// StaticCallOpType is used to represent STATICCALL trace operations.
+	StaticCallOpType = "STATICCALL"
+
+	// DestructOpType is a synthetic operation used to represent the
+	// deletion of suicided accounts that still have funds at the end
+	// of a transaction.
+	DestructOpType = "DESTRUCT"
 )
 
-// Enum value maps for TransactionType.
 var (
-	TRANSACTION_TYPE_NAME = map[int32]string{
-		0: "transfer",
-		1: "in_contract_transfer",
-		2: "gas_fee",
-		3: "reward",
+	SUCCESS = "SUCCESS"
+	FAIL    = "FAIL"
+
+	TomoNativeCoin = &types.Currency{
+		Symbol:   "TOMO",
+		Decimals: 18,
 	}
-	TRANSACTION_TYPE_CODE = map[string]int32{
-		"transfer":             0,
-		"in_contract_transfer": 1,
-		"gas_fee":              2,
-		"reward":               3,
+	OperationTypes = []string{
+		MinerRewardOpType,
+		FeeOpType,
+		CallOpType,
+		CreateOpType,
+		Create2OpType,
+		SelfDestructOpType,
+		CallCodeOpType,
+		DelegateCallOpType,
+		StaticCallOpType,
+		DestructOpType,
 	}
 )
 
@@ -87,27 +130,16 @@ type RPCTransaction struct {
 	S                *hexutil.Big    `json:"s"`
 }
 
-var (
-	TomoNativeCoin = &types.Currency{
-		Symbol:   "TOMO",
-		Decimals: 18,
-	}
-)
-
-func (t TransactionType) String() string {
-	return TRANSACTION_TYPE_NAME[int32(t)]
+// CallArgs represents the arguments for a call.
+type CallArgs struct {
+	From     common.Address  `json:"from"`
+	To       *common.Address `json:"to"`
+	Gas      hexutil.Uint64           `json:"gas"`
+	GasPrice hexutil.Big              `json:"gasPrice"`
+	Value    hexutil.Big              `json:"value"`
+	Data     hexutil.Bytes            `json:"data"`
 }
 
 func SupportedOperationTypes() []string {
-	opTyps := make([]string, 0, len(TRANSACTION_TYPE_NAME))
-	for _, name := range TRANSACTION_TYPE_NAME {
-		opTyps = append(opTyps, name)
-	}
-	return opTyps
-}
-
-func SupportedConstructionTypes() []string {
-	return []string{
-		TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
-	}
+	return OperationTypes
 }

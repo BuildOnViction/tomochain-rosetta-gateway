@@ -9,11 +9,11 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/spf13/cast"
-	"github.com/tomochain/tomochain"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	tomochaincommon "github.com/tomochain/tomochain/common"
+	"github.com/tomochain/tomochain/common/hexutil"
 	tomochaintypes "github.com/tomochain/tomochain/core/types"
 	"github.com/tomochain/tomochain/crypto"
 	"github.com/tomochain/tomochain/rlp"
@@ -31,6 +31,7 @@ type transaction struct {
 	GasLimit uint64   `json:"gas"`
 	ChainID  *big.Int `json:"chain_id"`
 }
+
 
 type constructionAPIService struct {
 	client tc.TomoChainClient
@@ -120,7 +121,9 @@ func (s *constructionAPIService) ConstructionDerive(
 	addr := tc.PubToAddress(pubBytes)
 
 	return &types.ConstructionDeriveResponse{
-		Address: addr.String(),
+		AccountIdentifier: &types.AccountIdentifier{
+			Address: addr.String(),
+		},
 	}, nil
 }
 
@@ -159,17 +162,17 @@ func (s *constructionAPIService) ConstructionHash(
 // value (uint64)
 // data ([]bytes) : data include method name, argument if this tx call a contract
 
-func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, *types.Error) {
+func parseMetaDataToCallMsg(options map[string]interface{}) (common.CallArgs, *types.Error) {
 	sender, ok := options[common.METADATA_SENDER]
 	if !ok {
 		fmt.Println("parseMetaDataToCallMsg: empty sender address")
-		return tomochain.CallMsg{}, common.ErrInvalidInputParam
+		return common.CallArgs{}, common.ErrInvalidInputParam
 	}
 
 	to, ok := options[common.METADATA_RECIPIENT]
 	if !ok {
 		fmt.Println("parseMetaDataToCallMsg: empty recipient address")
-		return tomochain.CallMsg{}, common.ErrInvalidInputParam
+		return common.CallArgs{}, common.ErrInvalidInputParam
 	}
 	destinationAddress := tomochaincommon.HexToAddress(cast.ToString(to))
 
@@ -196,14 +199,13 @@ func parseMetaDataToCallMsg(options map[string]interface{}) (tomochain.CallMsg, 
 		d = []byte{}
 	}
 
-	callMsg := tomochain.CallMsg{
+	callMsg := common.CallArgs{
 		From:            tomochaincommon.HexToAddress(cast.ToString(sender)),
 		To:              &destinationAddress,
-		Gas:             cast.ToUint64(gasLimit),
-		GasPrice:        gasPrice,
-		Value:           new(big.Int).Abs(value),
+		Gas:             (hexutil.Uint64)(cast.ToUint64(gasLimit)),
+		GasPrice:        (hexutil.Big)(*gasPrice),
+		Value:           (hexutil.Big)(*value),
 		Data:            d.([]byte),
-		BalanceTokenFee: nil,
 	}
 	return callMsg, nil
 }
@@ -229,7 +231,7 @@ func (s *constructionAPIService) ConstructionMetadata(
 		fmt.Println("construction/metadata: failed to estimate gas", err)
 		return nil, common.ErrUnableToEstimateGas
 	}
-	account, err := s.client.GetAccount(ctx, callMsg.From.String())
+	account, err := s.client.GetAccount(ctx, callMsg.From.String(), nil)
 	if err != nil {
 		fmt.Println("construction/metadata: failed to getAccount", callMsg.From.String(), err)
 		return nil, common.ErrUnableToGetAccount
@@ -237,7 +239,7 @@ func (s *constructionAPIService) ConstructionMetadata(
 	meta := account.Metadata
 
 	meta[common.METADATA_GAS_LIMIT] = callMsg.Gas
-	meta[common.METADATA_GAS_PRICE] = callMsg.GasPrice
+	meta[common.METADATA_GAS_PRICE] = callMsg.GasPrice.ToInt()
 	meta[common.METADATA_SENDER] = callMsg.From
 
 	v, ok := request.Options[common.METADATA_TRANSACTION_AMOUNT]
@@ -246,9 +248,7 @@ func (s *constructionAPIService) ConstructionMetadata(
 	}
 	value, _ := new(big.Int).SetString(cast.ToString(v), 10)
 	meta[common.METADATA_AMOUNT] = value
-
-	suggestedFee := new(big.Int).Mul(new(big.Int).SetUint64(estimateGas), callMsg.GasPrice)
-
+	suggestedFee := new(big.Int).Mul(new(big.Int).SetUint64(estimateGas), callMsg.GasPrice.ToInt())
 	return &types.ConstructionMetadataResponse{
 		Metadata: meta,
 		SuggestedFee: []*types.Amount{
@@ -266,7 +266,6 @@ func (s *constructionAPIService) ConstructionParse(
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
 	tx := &transaction{}
-
 	if !request.Signed {
 		// decode unsigned transaction
 		b, err := hex.DecodeString(request.Transaction)
@@ -325,7 +324,7 @@ func (s *constructionAPIService) ConstructionParse(
 
 	ops := []*types.Operation{
 		{
-			Type: common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			Type: common.CallOpType,
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: 0,
 			},
@@ -338,7 +337,7 @@ func (s *constructionAPIService) ConstructionParse(
 			},
 		},
 		{
-			Type: common.TRANSACTION_TYPE_NATIVE_TRANSFER.String(),
+			Type: common.CallOpType,
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: 1,
 			},
@@ -367,14 +366,18 @@ func (s *constructionAPIService) ConstructionParse(
 	if request.Signed {
 		resp = &types.ConstructionParseResponse{
 			Operations: ops,
-			Signers:    []string{tx.From},
-			Metadata:   metaMap,
+			AccountIdentifierSigners: []*types.AccountIdentifier{
+				{
+					Address: tx.From,
+				},
+			},
+			Metadata: metaMap,
 		}
 	} else {
 		resp = &types.ConstructionParseResponse{
-			Operations: ops,
-			Signers:    []string{},
-			Metadata:   metaMap,
+			Operations:               ops,
+			AccountIdentifierSigners: []*types.AccountIdentifier{},
+			Metadata:                 metaMap,
 		}
 	}
 	return resp, nil
@@ -398,7 +401,6 @@ func (s *constructionAPIService) ConstructionPayloads(
 	}
 	txValue, _ := new(big.Int).SetString(cast.ToString(request.Operations[1].Amount.Value), 10)
 	gasPrice, _ := new(big.Int).SetString(cast.ToString(request.Metadata[common.METADATA_GAS_PRICE]), 10)
-
 	var txdata []byte
 	if request.Metadata[common.METADATA_TRANSACTION_DATA] != nil {
 		txdata = request.Metadata[common.METADATA_TRANSACTION_DATA].([]byte)
@@ -438,7 +440,9 @@ func (s *constructionAPIService) ConstructionPayloads(
 		UnsignedTransaction: unsignedTxEncode,
 		Payloads: []*types.SigningPayload{
 			{
-				Address:       checkFrom,
+				AccountIdentifier: &types.AccountIdentifier{
+					Address: checkFrom,
+				},
 				Bytes:         signer.Hash(tx).Bytes(),
 				SignatureType: types.EcdsaRecovery,
 			},

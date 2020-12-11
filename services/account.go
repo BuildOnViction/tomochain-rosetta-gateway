@@ -34,9 +34,15 @@ func (s *accountAPIService) AccountBalance(
 	if terr != nil {
 		return nil, terr
 	}
-	resp, err := s.client.GetAccount(ctx, request.AccountIdentifier.Address)
+	resp, err := s.client.GetAccount(ctx, request.AccountIdentifier.Address, request.BlockIdentifier)
 	if err != nil {
 		return nil, common.ErrUnableToGetAccount
 	}
 	return resp, nil
+}
+
+// AccountCoins implements /account/coins.
+func (s *accountAPIService) AccountCoins(context.Context, *types.AccountCoinsRequest) (*types.AccountCoinsResponse, *types.Error) {
+	// TomoChain blockchain doesn't support coin identifier
+	return nil, common.ErrNotImplemented
 }

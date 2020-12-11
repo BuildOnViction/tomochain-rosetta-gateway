@@ -4,6 +4,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
@@ -11,10 +12,6 @@ import (
 	tc "github.com/tomochain/tomochain-rosetta-gateway/tomochain-client"
 	"github.com/tomochain/tomochain/params"
 	"strconv"
-)
-
-const (
-	latestVersion = "v1.1.0"
 )
 
 type networkAPIService struct {
@@ -61,15 +58,18 @@ func (s *networkAPIService) NetworkStatus(
 	}
 	terr := ValidateNetworkIdentifier(ctx, s.client, request.NetworkIdentifier)
 	if terr != nil {
+		fmt.Println(terr)
 		return nil, terr
 	}
 
 	blk, err := s.client.GetBlockByNumber(ctx, nil) // nil means: get latest block
 	if err != nil {
+		fmt.Println(err)
 		return nil, common.ErrUnableToGetNodeStatus
 	}
 	genesisblk, err := s.client.GetGenesisBlock(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, common.ErrUnableToGetNodeStatus
 	}
 
@@ -102,14 +102,10 @@ func (s *networkAPIService) NetworkOptions(
 					Status:     common.FAIL,
 					Successful: false,
 				},
-				{
-					Status:     common.PENDING,
-					Successful: false,
-				},
 			},
-			OperationTypes: common.SupportedOperationTypes(),
-			Errors:         common.ErrorList,
-			HistoricalBalanceLookup : false,
+			OperationTypes:          common.SupportedOperationTypes(),
+			Errors:                  common.ErrorList,
+			HistoricalBalanceLookup: false,
 		},
 	}, nil
 }

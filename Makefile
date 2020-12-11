@@ -24,6 +24,8 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf ./$(BIN_DIRECTORY)
 
+update-tracer:
+	curl https://raw.githubusercontent.com/tomochain/tomochain/master/eth/tracers/internal/tracers/call_tracer.js -o tomochain-client/call_tracer.js
 
 gofmt:
 	$(GOFMT) -s -w $(GO_FILES)
