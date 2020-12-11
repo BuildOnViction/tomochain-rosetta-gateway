@@ -19,6 +19,7 @@ const (
 	ExtraSeal                 = 65
 	Epoch                     = 900
 	DefaultGasLimit           = 10000000
+	HardForkUpdateTxFee       = 13523400 // tx fee transfer to masternode owner
 
 	// HistoricalBalanceSupported is whether
 	// historical balance is supported.
@@ -56,6 +57,7 @@ const (
 	RPC_METHOD_GET_BALANCE              = "eth_getBalance"
 	RPC_METHOD_GET_REWARD_BY_HASH       = "eth_getRewardByHash"
 	RPC_METHOD_GET_CHAIN_ID             = "eth_chainId"
+	RPC_METHOD_GET_OWNER_BY_COINBASE    = "eth_getOwnerByCoinbase"
 
 	// MinerRewardOpType is used to describe
 	// a miner block reward.
@@ -134,10 +136,10 @@ type RPCTransaction struct {
 type CallArgs struct {
 	From     common.Address  `json:"from"`
 	To       *common.Address `json:"to"`
-	Gas      hexutil.Uint64           `json:"gas"`
-	GasPrice hexutil.Big              `json:"gasPrice"`
-	Value    hexutil.Big              `json:"value"`
-	Data     hexutil.Bytes            `json:"data"`
+	Gas      hexutil.Uint64  `json:"gas"`
+	GasPrice hexutil.Big     `json:"gasPrice"`
+	Value    hexutil.Big     `json:"value"`
+	Data     hexutil.Bytes   `json:"data"`
 }
 
 func SupportedOperationTypes() []string {
