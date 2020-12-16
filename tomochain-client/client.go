@@ -904,7 +904,7 @@ func (tc *TomoChainRpcClient) populateTransaction(
 			Type:   common.MinerRewardOpType,
 			Status: &common.SUCCESS,
 			Account: &RosettaTypes.AccountIdentifier{
-				Address: addrFrom,
+				Address: MustChecksum(addrFrom),
 			},
 			Amount: &RosettaTypes.Amount{
 				Value:    specialReward.String(),
