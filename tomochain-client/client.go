@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	RosettaTypes "github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/spf13/cast"
 	"github.com/tomochain/tomochain"
 	"github.com/tomochain/tomochain-rosetta-gateway/common"
 	"github.com/tomochain/tomochain-rosetta-gateway/config"
@@ -21,6 +22,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"log"
 	"math/big"
+	"strings"
 	"sync"
 )
 
@@ -262,7 +264,7 @@ func (tc *TomoChainRpcClient) getBlock(
 	//FIXME: TomoChain Blockchain includes double validation mechanism
 	// so block.Hash() won't response the correct blockhash
 	// remember to get 'hash' field from response data
-	
+
 	finalBlockHash := ""
 	if data["hash"] != nil {
 		finalBlockHash = (data["hash"]).(string)
@@ -272,21 +274,21 @@ func (tc *TomoChainRpcClient) getBlock(
 	var head tomochaintypes.Header
 	var body rpcBlock
 	if err := json.Unmarshal(raw, &head); err != nil {
-		return nil, nil, "",  err
+		return nil, nil, "", err
 	}
 	if err := json.Unmarshal(raw, &body); err != nil {
-		return nil, nil, "",  err
+		return nil, nil, "", err
 	}
 
 	uncles, err := tc.getUncles(ctx, &head, &body)
 	if err != nil {
-		return nil, nil, "",  fmt.Errorf("%w: unable to get uncles", err)
+		return nil, nil, "", fmt.Errorf("%w: unable to get uncles", err)
 	}
 
 	// Get all transaction receipts
 	receipts, err := tc.getBlockReceipts(ctx, body.Hash, body.Transactions)
 	if err != nil {
-		return nil, nil,  "", fmt.Errorf("%w: could not get receipts for %x", err, body.Hash[:])
+		return nil, nil, "", fmt.Errorf("%w: could not get receipts for %x", err, body.Hash[:])
 	}
 
 	miner := tomochaincommon.Address{}
@@ -302,7 +304,7 @@ func (tc *TomoChainRpcClient) getBlock(
 		miner, err = GetCoinbaseFromHeader(&head)
 		if err != nil {
 			fmt.Println("Failed to get miner of block", head.Number, finalBlockHash)
-			return nil, nil, "",  err
+			return nil, nil, "", err
 		}
 	}
 
@@ -327,11 +329,10 @@ func (tc *TomoChainRpcClient) getBlock(
 			err := tc.c.CallContext(ctx, &owner, common.RPC_METHOD_GET_OWNER_BY_COINBASE, miner, toBlockNumArg(head.Number))
 			if err != nil {
 				fmt.Println("Failed to get masternode owner of coinbase", head.Number, miner)
-				return nil, nil, "",  err
+				return nil, nil, "", err
 			}
 			loadedTxs[i].Miner = MustChecksum(owner)
 		}
-
 
 		loadedTxs[i].Receipt = receipt
 
@@ -341,7 +342,7 @@ func (tc *TomoChainRpcClient) getBlock(
 		}
 		trace, rawTrace, err := tc.getTransactionTraces(ctx, tx.tx.Hash())
 		if err != nil {
-			return nil, nil,  "", fmt.Errorf("%w: could not get transaction traces for %s", err, tx.tx.Hash().String())
+			return nil, nil, "", fmt.Errorf("%w: could not get transaction traces for %s", err, tx.tx.Hash().String())
 		}
 		loadedTxs[i].Trace = trace
 		loadedTxs[i].RawTrace = rawTrace
@@ -774,9 +775,9 @@ func (tc *TomoChainRpcClient) populateTransactions(
 	loadedTransactions []*loadedTransaction,
 ) ([]*RosettaTypes.Transaction, error) {
 	var (
-		transactions    []*RosettaTypes.Transaction
-		rewardTx *RosettaTypes.Transaction
-		err error
+		transactions []*RosettaTypes.Transaction
+		rewardTx     *RosettaTypes.Transaction
+		err          error
 	)
 	// Compute reward transaction (block + uncle reward)
 	if block.NumberU64()%common.Epoch == 0 && block.NumberU64() > 0 {
@@ -816,6 +817,7 @@ func (tc *TomoChainRpcClient) populateTransactions(
 	return transactions, nil
 }
 
+// populateRewardTransaction parse rewards to transaction
 func (tc *TomoChainRpcClient) populateRewardTransaction(
 	ctx context.Context,
 	blockIdentifier *RosettaTypes.BlockIdentifier,
@@ -884,6 +886,31 @@ func (tc *TomoChainRpcClient) populateTransaction(
 	var traceMap map[string]interface{}
 	if err := json.Unmarshal(tx.RawTrace, &traceMap); err != nil {
 		return nil, err
+	}
+	specialReward := new(big.Int)
+	addrFrom := (*tx.From).Hex()
+	if addr, ok := common.SpecialRewardBlockMap[cast.ToUint64(*tx.BlockNumber)]; ok {
+		if strings.ToLower(addr) == strings.ToLower(addrFrom) {
+			bal := common.SpecialRewardAddrMap[addr]
+
+			specialReward.SetString(bal+"000000000000000000", 10)
+		}
+	}
+	if specialReward.Sign() > 0 {
+		ops = append(ops, &RosettaTypes.Operation{
+			OperationIdentifier: &RosettaTypes.OperationIdentifier{
+				Index: int64(len(ops)),
+			},
+			Type:   common.MinerRewardOpType,
+			Status: &common.SUCCESS,
+			Account: &RosettaTypes.AccountIdentifier{
+				Address: addrFrom,
+			},
+			Amount: &RosettaTypes.Amount{
+				Value:    specialReward.String(),
+				Currency: common.TomoNativeCoin,
+			},
+		})
 	}
 
 	populatedTransaction := &RosettaTypes.Transaction{
