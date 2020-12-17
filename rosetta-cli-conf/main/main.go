@@ -67,7 +67,7 @@ func main() {
 		}
 	}
 
-	output, err := json.Marshal(bootstrapBalances)
+	output, err := json.MarshalIndent(bootstrapBalances, "", "	")
 	if err != nil {
 		fmt.Println("Unable to marshal bootstrapBalances", err)
 		return
