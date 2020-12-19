@@ -945,7 +945,7 @@ func (tc *TomoChainRpcClient) GetAccount(ctx context.Context, owner string, bloc
 	res.BlockIdentifier = block.BlockIdentifier
 
 	var result hexutil.Big
-	err = tc.c.CallContext(ctx, &result, common.RPC_METHOD_GET_BALANCE, tomochaincommon.HexToAddress(owner), toBlockNumArg(big.NewInt(*blockIdentifier.Index)))
+	err = tc.c.CallContext(ctx, &result, common.RPC_METHOD_GET_BALANCE, tomochaincommon.HexToAddress(owner), toBlockNumArg(big.NewInt(block.BlockIdentifier.Index)))
 	if err != nil {
 		return nil, err
 	}
