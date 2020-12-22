@@ -106,6 +106,7 @@ func (s *networkAPIService) NetworkOptions(
 			OperationTypes:          common.SupportedOperationTypes(),
 			Errors:                  common.ErrorList,
 			HistoricalBalanceLookup: common.HistoricalBalanceSupported,
+			CallMethods:             tc.CallMethods,
 		},
 	}, nil
 }
