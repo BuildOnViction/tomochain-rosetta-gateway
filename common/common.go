@@ -23,6 +23,8 @@ const (
 
 	// HistoricalBalanceSupported is whether
 	// historical balance is supported.
+	// This is very important for tracking account balance from genesis to current state
+	// This makes sure that: currentBalance = balanceAtGenesis + all balance-changing events
 	HistoricalBalanceSupported = true
 
 	// text
