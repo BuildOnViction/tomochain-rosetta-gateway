@@ -15,7 +15,7 @@ BUILD_TARGET=tomochain-rosetta-gateway
 BIN_DIRECTORY=bin
 
 default: build
-all: clean build
+all: clean build update-tracer gen-bootstrap-balance
 
 build:
 	$(GOBUILD) -o ./$(BIN_DIRECTORY)/$(BUILD_TARGET)
@@ -26,6 +26,7 @@ clean:
 
 update-tracer:
 	curl https://raw.githubusercontent.com/tomochain/tomochain/master/eth/tracers/internal/tracers/call_tracer.js -o tomochain-client/call_tracer.js
-
+gen-bootstrap-balance:
+	@cd rosetta-cli-conf/main && go build  -o ../genBootstrapBalance
 gofmt:
 	$(GOFMT) -s -w $(GO_FILES)
