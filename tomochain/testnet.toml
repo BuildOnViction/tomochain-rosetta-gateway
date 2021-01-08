@@ -1,0 +1,18 @@
+[Eth]
+SyncMode = "full"
+NetworkId	= 89
+
+[Node]
+DataDir = "/data"
+NoUSB = true
+HTTPHost = "0.0.0.0"
+HTTPPort = 8545
+HTTPVirtualHosts = ["*"]
+HTTPModules = ["eth", "debug", "admin"]
+IPCPath = ""
+AnnounceTxs = true
+
+[Node.P2P]
+ListenAddr = ":30311"  # flag --port
+BootstrapNodes = ["enode://ba966140e161ad416a7bd7c75dc695e0a41232723e2b19cbbf651883ef5e8f2528801b17b9d63152814d219a58a4fcc3e3c877486e64057523f6714092348efa@51.159.20.13:30301"]
+

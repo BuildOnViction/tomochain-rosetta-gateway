@@ -185,6 +185,55 @@ var (
 		Retriable: false,
 	}
 
+	// ErrBlockOrphaned is returned when a block being
+	// processed is orphaned and it is not possible
+	// to gather all receipts. At some point in the future,
+	// it may become possible to gather all receipts if the
+	// block becomes part of the canonical chain again.
+	ErrBlockOrphaned = &types.Error{
+		Code:      31, //nolint
+		Message:   "Block orphaned",
+		Retriable: true,
+	}
+
+	// ErrTomoNotReady is returned when tomo
+	// cannot yet serve any queries.
+	ErrTomoNotReady = &types.Error{
+		Code:      32, //nolint
+		Message:   "tomo not ready",
+		Retriable: true,
+	}
+
+	// ErrTomo is returned when tomo
+	// errors on a request.
+	ErrTomo = &types.Error{
+		Code:    33, //nolint
+		Message: "tomo error",
+	}
+
+
+	// ErrCallParametersInvalid is returned when
+	// the parameters for a particular call method
+	// are considered invalid.
+	ErrCallParametersInvalid = &types.Error{
+		Code:    34, //nolint
+		Message: "Call parameters invalid",
+	}
+
+	// ErrCallOutputMarshal is returned when the output
+	// for /call cannot be marshaled.
+	ErrCallOutputMarshal = &types.Error{
+		Code:    35, //nolint
+		Message: "Call output marshal failed",
+	}
+
+	// ErrCallMethodInvalid is returned when a /call
+	// method is invalid.
+	ErrCallMethodInvalid = &types.Error{
+		Code:    36, //nolint
+		Message: "Call method invalid",
+	}
+
 	ErrorList = []*types.Error{
 		ErrUnableToGetChainID,
 		ErrInvalidBlockchain,
@@ -216,5 +265,11 @@ var (
 		ErrUnableToGetSuggestGas,
 		ErrUnableToDecompressPubkey,
 		ErrUnavailableOffline,
+		ErrBlockOrphaned,
+		ErrTomoNotReady,
+		ErrTomo,
+		ErrCallOutputMarshal,
+		ErrCallMethodInvalid,
+		ErrCallParametersInvalid,
 	}
 )
