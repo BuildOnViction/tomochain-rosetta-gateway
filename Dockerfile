@@ -23,8 +23,9 @@ ENV GO111MODULE=on
 # Compile TomoChain Client software
 FROM golang-builder as tomochain-builder
 
-ARG TOMOCHAIN_CORE_VERSION="v2.3.0"
-RUN git clone --branch $TOMOCHAIN_CORE_VERSION https://github.com/tomochain/tomochain.git tomochain-source
+ARG TOMOCHAIN_CORE_VERSION="localnet"
+RUN rm -rf tomochain-source
+RUN git clone --branch $TOMOCHAIN_CORE_VERSION https://github.com/thanhnguyennguyen/tomochain.git tomochain-source
 RUN cd tomochain-source && \
 make clean && make tomo && chmod +x ./build/bin/tomo && \
 mv ./build/bin/tomo /app/tomo && \
@@ -35,7 +36,7 @@ cd .. && rm -rf tomochain-source
 FROM golang-builder as rosetta-builder
 
 # Use native remote build context to build in any directory
-ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="devnet"
+ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="localnet"
 RUN mkdir /app/tomochain
 RUN cd /app
 RUN git clone --branch $TOMOCHAIN_ROSETTA_GATEWAY_VERSION https://github.com/tomochain/tomochain-rosetta-gateway.git tomochain-rosetta-gateway-source

@@ -15,11 +15,11 @@ const (
 	TomoChainBlockchain       = "TomoChain"
 	TomoChainMainnetNetWorkId = 88
 	TomoChainTestnetNetWorkId = 89
-	TomoChainDevnetNetWorkId  = 99
+	TomoChainDevnetNetWorkId  = 1992
 	ExtraSeal                 = 65
-	Epoch                     = 900
+	Epoch                     = 90
 	DefaultGasLimit           = 10000000
-	HardForkUpdateTxFee       = 13523400 // tx fee transfer to masternode owner
+	HardForkUpdateTxFee       = 0 // tx fee transfer to masternode owner
 
 	// HistoricalBalanceSupported is whether
 	// historical balance is supported.

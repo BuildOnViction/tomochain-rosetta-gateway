@@ -122,7 +122,7 @@ func LoadConfiguration() (*Configuration, error) {
 			Network:    tomochain.DevnetNetwork,
 		}
 		config.GenesisBlockIdentifier = &types.BlockIdentifier{
-			Hash: "",
+			Hash: "0x8853b9408238a5f3d33fce226114b2ac85c487a9e1978979c30b31e2403ed575",
 			Index: tomochain.GenesisBlockIndex,
 		}
 		devnetChainConfig := params.TomoMainnetChainConfig

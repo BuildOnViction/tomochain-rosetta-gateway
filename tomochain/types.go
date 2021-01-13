@@ -55,7 +55,7 @@ var (
 	TestnetTomoArguments = ` -- testnet --config=/app/tomochain/tomochain.toml --gcmode=archive --store-reward --tomox.dbengine "leveldb" `
 
 	// DevnetTomoArguments are the arguments to start a mainnet tomochain instance.
-	DevnetTomoArguments = `--config=/app/tomochain/tomochain.toml --gcmode=archive  --store-reward --tomox.dbengine "leveldb" `
+	DevnetTomoArguments = `--config=/app/tomochain/tomochain.toml --gcmode=archive  --store-reward --tomox.dbengine "leveldb" --ethstats "rosetta:nguyennguyen@localhost:3333"  `
 )
 
 var CallMethods = []string{
