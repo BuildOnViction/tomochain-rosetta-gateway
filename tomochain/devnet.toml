@@ -1,6 +1,6 @@
 [Eth]
 SyncMode = "full"
-NetworkId = 88
+NetworkId = 99
 
 [Node]
 DataDir = "/data"
@@ -18,5 +18,4 @@ BootstrapNodes = ["enode://e28cc2e0a9a25d4d3aece2a3137bdfd8c31909f719e0ee8da3c00
 
 [Ethstats]
 URL = "tomochain-rosetta:test2test@157.245.206.12:3004"
-
 

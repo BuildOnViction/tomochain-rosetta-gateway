@@ -94,6 +94,7 @@ func LoadConfiguration() (*Configuration, error) {
 	}
 
 	networkValue := os.Getenv(NetworkEnv)
+
 	switch networkValue {
 	case Mainnet:
 		config.Network = &types.NetworkIdentifier{
@@ -122,7 +123,7 @@ func LoadConfiguration() (*Configuration, error) {
 			Network:    tomochain.DevnetNetwork,
 		}
 		config.GenesisBlockIdentifier = &types.BlockIdentifier{
-			Hash: "",
+			Hash: "0x4302d1f28e4d9ad83a73653f38ffed3c9d691b781a930c62d0aba68390d4b8dc",
 			Index: tomochain.GenesisBlockIndex,
 		}
 		devnetChainConfig := params.TomoMainnetChainConfig
@@ -134,7 +135,6 @@ func LoadConfiguration() (*Configuration, error) {
 	default:
 		return nil, fmt.Errorf("%s is not a valid network", networkValue)
 	}
-
 	config.TomoURL = DefaultTomoURL
 	envGethURL := os.Getenv(TomoEnv)
 	if len(envGethURL) > 0 {

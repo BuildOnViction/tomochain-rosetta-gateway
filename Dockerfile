@@ -23,13 +23,13 @@ ENV GO111MODULE=on
 # Compile TomoChain Client software
 FROM golang-builder as tomochain-builder
 
-ARG TOMOCHAIN_CORE_VERSION="v2.3.0"
+ARG TOMOCHAIN_CORE_VERSION="devnet"
 RUN rm -rf tomochain-source
 RUN git clone --branch $TOMOCHAIN_CORE_VERSION https://github.com/tomochain/tomochain.git tomochain-source
 RUN cd tomochain-source && \
 make clean && make tomo && chmod +x ./build/bin/tomo && \
 mv ./build/bin/tomo /app/tomo && \
-cp ./genesis/mainnet.json /app/genesis.json && \
+cp ./genesis/tomoxnet.json /app/genesis.json && \
 cd .. && rm -rf tomochain-source
 
 
@@ -37,7 +37,7 @@ cd .. && rm -rf tomochain-source
 FROM golang-builder as rosetta-builder
 
 # Use native remote build context to build in any directory
-ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="master"
+ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="devnet"
 RUN mkdir /app/tomochain
 RUN cd /app
 RUN rm -rf tomochain-rosetta-gateway-source
@@ -46,10 +46,8 @@ RUN cd tomochain-rosetta-gateway-source && \
 go build -o tomochain-rosetta . && \
 mv ./tomochain-rosetta /app/tomochain-rosetta && \
 mv ./tomochain/call_tracer.js /app/tomochain/call_tracer.js && \
-mv ./tomochain/tomochain.toml /app/tomochain/tomochain.toml && \
+mv ./tomochain/devnet.toml /app/tomochain/tomochain.toml && \
 cd .. && rm -rf tomochain-rosetta-gateway-source
-
-
 
 ## Build Final Image
 FROM ubuntu:18.04

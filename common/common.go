@@ -6,6 +6,7 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tomochain/tomochain/common"
 	"github.com/tomochain/tomochain/common/hexutil"
+	"math/big"
 )
 
 type TransactionType uint64
@@ -114,7 +115,7 @@ var (
 		StaticCallOpType,
 		DestructOpType,
 	}
-	HardForkUpdateTxFee = common.TIPTRC21Fee // tx fee transfer to masternode owner
+	HardForkUpdateTxFee = new(big.Int).SetUint64(0) // tx fee transfer to masternode owner
 )
 
 var (

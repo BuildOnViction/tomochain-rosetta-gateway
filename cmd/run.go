@@ -76,7 +76,6 @@ func runRunCmd(cmd *cobra.Command, args []string) error {
 				return tomochain.StartTomo(ctx, cfg.TomoArguments, g)
 			})
 		}
-
 		var err error
 		client, err = tomochain.NewClient(cfg.TomoURL, cfg.Params)
 		if err != nil {
