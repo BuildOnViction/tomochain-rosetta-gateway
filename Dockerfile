@@ -39,6 +39,7 @@ FROM golang-builder as rosetta-builder
 ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="localnet"
 RUN mkdir /app/tomochain
 RUN cd /app
+RUN rm -rf tomochain-rosetta-gateway-source
 RUN git clone --branch $TOMOCHAIN_ROSETTA_GATEWAY_VERSION https://github.com/tomochain/tomochain-rosetta-gateway.git tomochain-rosetta-gateway-source
 RUN cd tomochain-rosetta-gateway-source && \
 go build -o tomochain-rosetta . && \

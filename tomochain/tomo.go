@@ -15,7 +15,7 @@ import (
 
 const (
 	tomoLogger       = "tomo"
-	tomoStdErrLogger = "tomochain-log"
+	tomoStdErrLogger = "tomochain log"
 )
 
 // logPipe prints out logs from geth. We don't end when context
