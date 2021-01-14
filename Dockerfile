@@ -24,6 +24,7 @@ ENV GO111MODULE=on
 FROM golang-builder as tomochain-builder
 
 ARG TOMOCHAIN_CORE_VERSION="v2.3.0"
+RUN rm -rf tomochain-source
 RUN git clone --branch $TOMOCHAIN_CORE_VERSION https://github.com/tomochain/tomochain.git tomochain-source
 RUN cd tomochain-source && \
 make clean && make tomo && chmod +x ./build/bin/tomo && \
@@ -38,6 +39,7 @@ FROM golang-builder as rosetta-builder
 ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="0.0.2"
 RUN mkdir /app/tomochain
 RUN cd /app
+RUN rm -rf tomochain-rosetta-gateway-source
 RUN git clone --branch $TOMOCHAIN_ROSETTA_GATEWAY_VERSION https://github.com/tomochain/tomochain-rosetta-gateway.git tomochain-rosetta-gateway-source
 RUN cd tomochain-rosetta-gateway-source && \
 go build -o tomochain-rosetta . && \
