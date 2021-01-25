@@ -1,6 +1,6 @@
 [Eth]
 SyncMode = "full"
-NetworkId	= 99
+NetworkId	= 1992
 
 [Node]
 DataDir = "/data"
@@ -13,6 +13,6 @@ IPCPath = ""
 AnnounceTxs = true
 
 [Node.P2P]
-ListenAddr = ":30311"  # flag --port
+ListenAddr = ":30300"  # flag --port
 BootstrapNodes        = ["enode://d1b87383a6fe6d9d4d0df41d483de6dc53466cc6606ad8a815ca2391ad242e91a5b46feae6f87993c21ebccd73b14d5ba4c61d93d29a97eb860272540dce7e63@127.0.0.1:30301"]
 

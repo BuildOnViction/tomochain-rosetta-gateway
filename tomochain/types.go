@@ -25,7 +25,7 @@ var (
 	TestnetNetwork string = "89"
 
 	// DevnetNetwork is the value of the network
-	DevnetNetwork string = "99"
+	DevnetNetwork string = "1992"
 
 	// MainnetGenesisBlockIdentifier is the *types.BlockIdentifier
 	// of the mainnet genesis block.
