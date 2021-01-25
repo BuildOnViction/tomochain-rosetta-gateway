@@ -49,13 +49,13 @@ var (
 	}
 
 	// MainnetTomoArguments are the arguments to start a mainnet tomochain instance.
-	MainnetTomoArguments = `--config=/app/tomochain/tomochain.toml --gcmode=archive  --store-reward --tomox.dbengine "leveldb" `
+	MainnetTomoArguments = `--config=/app/tomochain/mainnet.toml --gcmode=archive  --store-reward --tomox.dbengine=leveldb`
 
 	// TestnetTomoArguments are the arguments to start a mainnet tomochain instance.
-	TestnetTomoArguments = ` -- testnet --config=/app/tomochain/tomochain.toml --gcmode=archive --store-reward --tomox.dbengine "leveldb" `
+	TestnetTomoArguments = ` --testnet --config=/app/tomochain/testnet.toml --gcmode=archive --store-reward --tomox.dbengine=leveldb`
 
 	// DevnetTomoArguments are the arguments to start a mainnet tomochain instance.
-	DevnetTomoArguments = `--config=/app/tomochain/tomochain.toml --gcmode=archive  --store-reward --tomox.dbengine "leveldb" `
+	DevnetTomoArguments = `--config=/app/tomochain/devnet.toml --gcmode=archive  --store-reward --tomox.dbengine=leveldb`
 )
 
 var CallMethods = []string{
