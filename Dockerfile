@@ -72,3 +72,6 @@ RUN chmod -R 755 /app/*
 
 CMD ["/app/tomochain-rosetta", "run"]
 
+ARG P2P_PORT=30300
+EXPOSE $P2P_PORT/tcp
+EXPOSE $P2P_PORT/udp
