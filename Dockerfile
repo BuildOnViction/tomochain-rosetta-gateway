@@ -36,7 +36,7 @@ cd .. && rm -rf tomochain-source
 FROM golang-builder as rosetta-builder
 
 # Use native remote build context to build in any directory
-ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="0.0.2"
+ARG TOMOCHAIN_ROSETTA_GATEWAY_VERSION="master"
 RUN mkdir /app/tomochain
 RUN cd /app
 RUN rm -rf tomochain-rosetta-gateway-source
