@@ -73,5 +73,8 @@ COPY --from=rosetta-builder /app/tomochain-rosetta /app/tomochain-rosetta
 # Set permissions for everything added to /app
 RUN chmod -R 755 /app/*
 
+# init client with genesis
+RUN /app/tomo init /app/genesis.json --datadir=/data
+
 CMD ["/app/tomochain-rosetta", "run"]
 
