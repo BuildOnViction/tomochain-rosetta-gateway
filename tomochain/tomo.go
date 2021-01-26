@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -38,6 +39,37 @@ func logPipe(pipe io.ReadCloser, identifier string) error {
 // and logs the results to the console.
 func StartTomo(ctx context.Context, arguments string, g *errgroup.Group) error {
 	parsedArgs := strings.Split(arguments, " ")
+
+	// get datadir
+	// default datadir = /data
+	datadir := "/data"
+	for _, arg := range parsedArgs {
+		if strings.HasPrefix(arg, "--datadir") {
+			d := strings.Split(arg, "=")
+			if len(d) > 0 {
+				datadir = d[1]
+			}
+		}
+	}
+	if _, err := os.Stat(datadir); os.IsNotExist(err) {
+		fmt.Println("create data dir", datadir)
+		os.Mkdir(datadir, 755)
+	}
+
+	// initialize if not exist
+	if _, err := os.Stat(path.Join(datadir, "tomo")); os.IsNotExist(err) {
+		fmt.Println("Initialize tomochain datadir with genesis")
+		initCmd := exec.Command(
+			"/app/tomo",
+			"init",
+			"/app/genesis.json",
+			"--datadir="+datadir,
+		)
+		if err := initCmd.Run(); err != nil {
+			fmt.Println("Failed to initialize tomochain datadir", err)
+		}
+	}
+
 	cmd := exec.Command(
 		"/app/tomo",
 		parsedArgs...,
@@ -74,4 +106,3 @@ func StartTomo(ctx context.Context, arguments string, g *errgroup.Group) error {
 
 	return cmd.Wait()
 }
-

@@ -29,6 +29,7 @@ RUN git clone --branch $TOMOCHAIN_CORE_VERSION https://github.com/tomochain/tomo
 RUN cd tomochain-source && \
 make clean && make tomo && chmod +x ./build/bin/tomo && \
 mv ./build/bin/tomo /app/tomo && \
+cp ./genesis/mainnet.json /app/genesis.json && \
 cd .. && rm -rf tomochain-source
 
 
@@ -60,8 +61,10 @@ RUN mkdir -p /app \
 
 WORKDIR /app
 
-# Copy binary from geth-builder
+# Copy binary from tomochain-builder
 COPY --from=tomochain-builder /app/tomo /app/tomo
+# Copy genesis from tomochain-builder
+COPY --from=tomochain-builder /app/genesis.json /app/genesis.json
 
 # Copy binary from rosetta-builder
 COPY --from=rosetta-builder /app/tomochain /app/tomochain

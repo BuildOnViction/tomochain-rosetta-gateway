@@ -1,6 +1,6 @@
 [Eth]
 SyncMode = "full"
-NetworkId	= 99
+NetworkId = 88
 
 [Node]
 DataDir = "/data"
@@ -14,5 +14,9 @@ AnnounceTxs = true
 
 [Node.P2P]
 ListenAddr = ":30303"  # flag --port
-BootstrapNodes        = ["enode://7d8ffe6d28f738d8b7c32f11fb6daa6204abae990a842025b0a969aabdda702aca95a821746332c2e618a92736538761b1660aa9defb099bc46b16db28992bc9@127.0.0.1:30301"]
+BootstrapNodes = ["enode://e28cc2e0a9a25d4d3aece2a3137bdfd8c31909f719e0ee8da3c008e2b767753eaf80c70ce16f666311a40fe33c6350c9fb049af9d5cfd46e8abad224f2ae3f0e@157.245.206.12:30303"]
+
+[ethstats]
+endpoint = "tomochain-rosetta:test2test@157.245.206.12:3004"
+
 
