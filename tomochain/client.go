@@ -302,7 +302,7 @@ func (tc *Client) getBlock(
 		loadedTxs[i].FeeAmount = feeAmount
 
 		// tx fee send to masternode owner since hardford common/common.go:22
-		if head.Number.Cmp(new(big.Int).SetUint64(common.HardForkUpdateTxFee)) < 0 {
+		if head.Number.Cmp(common.HardForkUpdateTxFee) < 0 {
 			loadedTxs[i].Miner = MustChecksum(miner.Hex())
 		} else {
 			var owner string

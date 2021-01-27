@@ -19,7 +19,6 @@ const (
 	ExtraSeal                 = 65
 	Epoch                     = 900
 	DefaultGasLimit           = 10000000
-	HardForkUpdateTxFee       = 13523400 // tx fee transfer to masternode owner
 
 	// HistoricalBalanceSupported is whether
 	// historical balance is supported.
@@ -115,6 +114,7 @@ var (
 		StaticCallOpType,
 		DestructOpType,
 	}
+	HardForkUpdateTxFee = common.TIPTRC21Fee // tx fee transfer to masternode owner
 )
 
 var (
