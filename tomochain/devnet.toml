@@ -16,7 +16,7 @@ AnnounceTxs = true
 ListenAddr = ":30303"  # flag --port
 BootstrapNodes = ["enode://e28cc2e0a9a25d4d3aece2a3137bdfd8c31909f719e0ee8da3c008e2b767753eaf80c70ce16f666311a40fe33c6350c9fb049af9d5cfd46e8abad224f2ae3f0e@157.245.206.12:30303"]
 
-[ethstats]
-endpoint = "tomochain-rosetta:test2test@157.245.206.12:3004"
+[Ethstats]
+URL = "tomochain-rosetta:test2test@157.245.206.12:3004"
 
 
