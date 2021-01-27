@@ -1,6 +1,3 @@
-// 20201229151206
-// https://raw.githubusercontent.com/tomochain/tomochain/master/genesis/testnet.json
-
 {
   "config": {
     "chainId": 89,

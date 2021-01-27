@@ -1,0 +1,42 @@
+[
+	{
+		"account_identifier": {
+			"address": "0x0000000000000000000000000000000000000068"
+		},
+		"currency": {
+			"symbol": "TOMO",
+			"decimals": 18
+		},
+		"value": "16000000000000000000000000"
+	},
+	{
+		"account_identifier": {
+			"address": "0x0000000000000000000000000000000000000088"
+		},
+		"currency": {
+			"symbol": "TOMO",
+			"decimals": 18
+		},
+		"value": "250000000000000000000000"
+	},
+	{
+		"account_identifier": {
+			"address": "0x0000000000000000000000000000000000000099"
+		},
+		"currency": {
+			"symbol": "TOMO",
+			"decimals": 18
+		},
+		"value": "11750000000000000000000000"
+	},
+	{
+		"account_identifier": {
+			"address": "0x4988F4eCe039A219bd96285401258298130Eb391"
+		},
+		"currency": {
+			"symbol": "TOMO",
+			"decimals": 18
+		},
+		"value": "55000000000000000000000000"
+	}
+]

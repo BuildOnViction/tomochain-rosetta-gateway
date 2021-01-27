@@ -76,7 +76,9 @@ deps:
 update-tracer:
 	curl https://raw.githubusercontent.com/tomochain/tomochain/master/eth/tracers/internal/tracers/call_tracer.js -o tomochain/call_tracer.js
 update-bootstrap-balances:
-	go run main.go utils:generate-bootstrap tomochain/genesis_files/mainnet.json rosetta-cli-conf/mainnet/bootstrap_balances.json;
-	go run main.go utils:generate-bootstrap tomochain/genesis_files/testnet.json rosetta-cli-conf/testnet/bootstrap_balances.json;
+	go run main.go utils:generate-bootstrap tomochain/genesis_files/mainnet.json rosetta-cli-conf/mainnet/bootstrap_balances.json
+	go run main.go utils:generate-bootstrap tomochain/genesis_files/testnet.json rosetta-cli-conf/testnet/bootstrap_balances.json
+	go run main.go utils:generate-bootstrap tomochain/genesis_files/devnet.json rosetta-cli-conf/devnet/bootstrap_balances.json
+
 gofmt:
 	$(GOFMT) -s -w $(GO_FILES)

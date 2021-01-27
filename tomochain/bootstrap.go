@@ -9,7 +9,6 @@ import (
 	tomochaincommon "github.com/tomochain/tomochain/common"
 	"io/ioutil"
 	"math/big"
-	"os"
 	"strings"
 )
 
@@ -44,6 +43,9 @@ func GenerateBootstrapFile(inputFile, outputFile string) error {
 					fmt.Println("Cannot parse balance of address ", addr, err)
 					return err
 				}
+				if balance.Sign() <= 0 {
+					continue
+				}
 				bootstrapBalances = append(bootstrapBalances, &BootstrapBalanceItem{
 					AccountIdentifier: &RosettaTypes.AccountIdentifier{
 						Address:    tomochaincommon.HexToAddress(addr).Hex(),
@@ -59,9 +61,6 @@ func GenerateBootstrapFile(inputFile, outputFile string) error {
 	if err != nil {
 		fmt.Println("Unable to marshal bootstrapBalances", err)
 		return err
-	}
-	if len(os.Args) > 2 {
-		outputFile = os.Args[2]
 	}
 	err = ioutil.WriteFile(outputFile, output, 0644)
 

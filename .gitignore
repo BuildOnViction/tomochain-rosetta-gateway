@@ -1,4 +1,8 @@
 .idea*
 bin/*
 config.yaml*
+rosetta-cli-conf/devnet
+rosetta-cli-conf/testnet
+rosetta-cli-conf/mainnet
+
 
