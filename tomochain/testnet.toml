@@ -15,7 +15,3 @@ AnnounceTxs = true
 [Node.P2P]
 ListenAddr = ":30303"  # flag --port
 BootstrapNodes = ["enode://ba966140e161ad416a7bd7c75dc695e0a41232723e2b19cbbf651883ef5e8f2528801b17b9d63152814d219a58a4fcc3e3c877486e64057523f6714092348efa@51.159.20.13:30301"]
-
-[Ethstats]
-URL = "tomochain-rosetta:bgfmsp2r7TgIYA2HW48SkBQE6L4CUc@stats.testnet.tomochain.com:443"
-
