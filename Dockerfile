@@ -23,7 +23,7 @@ ENV GO111MODULE=on
 # Compile TomoChain Client software
 FROM golang-builder as tomochain-builder
 
-ARG TOMOCHAIN_CORE_VERSION="v2.3.0"
+ARG TOMOCHAIN_CORE_VERSION="revert-new-evm"
 RUN rm -rf tomochain-source
 RUN git clone --branch $TOMOCHAIN_CORE_VERSION https://github.com/tomochain/tomochain.git tomochain-source
 RUN cd tomochain-source && \
