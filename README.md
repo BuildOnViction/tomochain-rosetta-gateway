@@ -1,2 +1,2 @@
-# tomochain-rosetta-gateway
-TomoChain Implementation of Rosetta Blockchain Standard
+# Free AI at api.airforce
+https://discord.gg/AJDsM7jtbq
